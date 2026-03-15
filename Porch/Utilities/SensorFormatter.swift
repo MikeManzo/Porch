@@ -56,6 +56,25 @@ struct SensorFormatter {
         "lightningDistance"
     ]
 
+    /// Keys whose value is a Unix timestamp in milliseconds
+    private static let timestampKeys: Set<String> = [
+        "dateUTC", "lightningTime"
+    ]
+
+    /// Keys whose value is an ISO/date string that should be reformatted
+    private static let dateStringKeys: Set<String> = [
+        "date", "lastRain"
+    ]
+
+    /// Shared date formatter using system locale defaults
+    private static let localeDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        formatter.doesRelativeDateFormatting = true
+        return formatter
+    }()
+
     // MARK: - Public API
 
     /// Produces a compact string for the menubar (e.g., "72.1°F" or "22.3°C")
@@ -146,6 +165,21 @@ struct SensorFormatter {
     /// Format a raw sensor value with the appropriate unit suffix, applying conversion if metric
     private static func formatValue(_ value: Any, forSensor key: String,
                                     unitSystem: UnitSystem = .imperial) -> String {
+        // Handle timestamp keys (Int64 milliseconds since epoch)
+        if timestampKeys.contains(key) {
+            if let ms = value as? Int64 {
+                let date = Date(timeIntervalSince1970: TimeInterval(ms) / 1000.0)
+                return localeDateFormatter.string(from: date)
+            }
+        }
+
+        // Handle date string keys — try to parse ISO 8601 and reformat
+        if dateStringKeys.contains(key) {
+            if let str = value as? String {
+                return formatDateString(str)
+            }
+        }
+
         let suffix = unitSuffix(for: key, unitSystem: unitSystem)
 
         if let doubleVal = value as? Double {
@@ -180,16 +214,24 @@ struct SensorFormatter {
 
     /// Determine unit suffix based on sensor key and unit system
     static func unitSuffix(for key: String, unitSystem: UnitSystem = .imperial) -> String {
-        // For metric mode, check explicit key sets first
-        if unitSystem == .metric {
-            if temperatureKeys.contains(key) { return "\u{00B0}C" }
-            if windSpeedKeys.contains(key) { return " km/h" }
-            if pressureKeys.contains(key) { return " hPa" }
-            if rainKeys.contains(key) { return " mm" }
-            if distanceKeys.contains(key) { return " km" }
+        // Check explicit key sets first — these are authoritative for both unit systems
+        if temperatureKeys.contains(key) {
+            return unitSystem == .metric ? "\u{00B0}C" : "\u{00B0}F"
+        }
+        if windSpeedKeys.contains(key) {
+            return unitSystem == .metric ? " km/h" : " mph"
+        }
+        if pressureKeys.contains(key) {
+            return unitSystem == .metric ? " hPa" : " inHg"
+        }
+        if rainKeys.contains(key) {
+            return unitSystem == .metric ? " mm" : " in"
+        }
+        if distanceKeys.contains(key) {
+            return unitSystem == .metric ? " km" : " mi"
         }
 
-        // Imperial mode or unit-agnostic sensors (humidity, UV, solar, battery, etc.)
+        // Fall through for unit-agnostic sensors (humidity, UV, solar, battery, etc.)
         let lowered = key.lowercased()
 
         // Temperature
@@ -246,6 +288,23 @@ struct SensorFormatter {
         if lowered.contains("pm25") { return " \u{03BC}g/m\u{00B3}" }
 
         return ""
+    }
+
+    /// Try to parse a date string and reformat it to the system locale
+    private static func formatDateString(_ string: String) -> String {
+        // Try ISO 8601 first
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = iso.date(from: string) {
+            return localeDateFormatter.string(from: date)
+        }
+        // Try without fractional seconds
+        iso.formatOptions = [.withInternetDateTime]
+        if let date = iso.date(from: string) {
+            return localeDateFormatter.string(from: date)
+        }
+        // Return original string if unparseable
+        return string
     }
 
     private static func needsDecimal(_ key: String) -> Bool {

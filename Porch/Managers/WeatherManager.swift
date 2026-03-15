@@ -141,11 +141,27 @@ class WeatherManager: ObservableObject {
         didSet { UserDefaults.standard.set(batteryAlertEnabled, forKey: "batteryAlertEnabled") }
     }
 
+    // MARK: - Deferred Bindings
+
+    /// Creates a Binding that defers the property set to the next run loop,
+    /// preventing "Publishing changes from within view updates" warnings.
+    func deferredBinding<T>(for keyPath: ReferenceWritableKeyPath<WeatherManager, T>) -> Binding<T> {
+        Binding(
+            get: { self[keyPath: keyPath] },
+            set: { newValue in
+                DispatchQueue.main.async {
+                    self[keyPath: keyPath] = newValue
+                }
+            }
+        )
+    }
+
     // MARK: - Private
 
     private var socket: AmbientWebSocket?
     private var cancellables = Set<AnyCancellable>()
-    private var lastAlertTimes: [String: Date] = [:]  // throttle alerts
+    private var lastAlertTimes: [String: Date] = [:]
+    var historyManager: HistoryManager?
 
     // MARK: - Init
 
@@ -296,6 +312,9 @@ class WeatherManager: ObservableObject {
         updateDailyExtremes(observation)
         if alertsEnabled {
             checkAlerts(observation)
+        }
+        if let data = weatherData {
+            historyManager?.saveSnapshot(from: data)
         }
     }
 

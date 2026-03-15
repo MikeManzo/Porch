@@ -29,26 +29,34 @@ struct ConnectionSettingsTab: View {
 
             Section("Connection") {
                 HStack {
-                    Button("Search for Stations") {
+                    Button {
                         manager.applicationKey = appKeyInput
                         manager.apiKeysRaw = apiKeyInput
                         manager.connect()
+                    } label: {
+                        Label("Search for Stations", systemImage: "antenna.radiowaves.left.and.right")
                     }
+                    .buttonStyle(.glass)
                     .disabled(appKeyInput.isEmpty || apiKeyInput.isEmpty)
 
-                    Button("Disconnect") {
+                    Button {
                         manager.disconnect()
+                    } label: {
+                        Label("Disconnect", systemImage: "xmark.circle")
                     }
+                    .buttonStyle(.glass)
                     .disabled(manager.connectionStatus == .disconnected)
 
                     Spacer()
 
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         Circle()
                             .fill(statusColor)
-                            .frame(width: 8, height: 8)
+                            .frame(width: 10, height: 10)
+                            .shadow(color: statusColor.opacity(0.6), radius: manager.connectionStatus == .connecting ? 6 : 0)
+                            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: manager.connectionStatus == .connecting)
                         Text(manager.connectionStatus.rawValue.capitalized)
-                            .font(.caption)
+                            .font(.subheadline.weight(.medium))
                             .foregroundStyle(.secondary)
                     }
                 }

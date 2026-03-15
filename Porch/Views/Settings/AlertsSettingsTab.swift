@@ -13,7 +13,7 @@ struct AlertsSettingsTab: View {
     var body: some View {
         Form {
             Section {
-                Toggle(isOn: $manager.alertsEnabled) {
+                Toggle(isOn: manager.deferredBinding(for: \.alertsEnabled)) {
                     Label("Enable Alerts", systemImage: "bell.badge.fill")
                 }
                 .onChange(of: manager.alertsEnabled) { _, enabled in
@@ -27,7 +27,7 @@ struct AlertsSettingsTab: View {
                 HStack {
                     Text("High Temp (\u{00B0}F)")
                     Spacer()
-                    TextField("", value: $manager.highTempAlert, format: .number)
+                    TextField("", value: manager.deferredBinding(for: \.highTempAlert), format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 80)
                         .multilineTextAlignment(.trailing)
@@ -36,7 +36,7 @@ struct AlertsSettingsTab: View {
                 HStack {
                     Text("Low Temp (\u{00B0}F)")
                     Spacer()
-                    TextField("", value: $manager.lowTempAlert, format: .number)
+                    TextField("", value: manager.deferredBinding(for: \.lowTempAlert), format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 80)
                         .multilineTextAlignment(.trailing)
@@ -51,7 +51,7 @@ struct AlertsSettingsTab: View {
                 HStack {
                     Text("High Wind (mph)")
                     Spacer()
-                    TextField("", value: $manager.highWindAlert, format: .number)
+                    TextField("", value: manager.deferredBinding(for: \.highWindAlert), format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 80)
                         .multilineTextAlignment(.trailing)
@@ -63,10 +63,10 @@ struct AlertsSettingsTab: View {
             .disabled(!manager.alertsEnabled)
 
             Section {
-                Toggle(isOn: $manager.leakAlertEnabled) {
+                Toggle(isOn: manager.deferredBinding(for: \.leakAlertEnabled)) {
                     Label("Water Leak Detection", systemImage: "drop.triangle.fill")
                 }
-                Toggle(isOn: $manager.batteryAlertEnabled) {
+                Toggle(isOn: manager.deferredBinding(for: \.batteryAlertEnabled)) {
                     Label("Low Battery Warning", systemImage: "battery.25percent")
                 }
             } header: {

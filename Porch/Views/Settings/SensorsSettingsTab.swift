@@ -58,11 +58,11 @@ struct SensorsSettingsTab: View {
     private func categoryColor(for category: SensorCategory) -> Color {
         switch category {
         case .temperature: .red
-        case .humidity: .blue
+        case .humidityDewPoint: .blue
         case .wind: .teal
         case .pressure: .indigo
-        case .rain: .cyan
-        case .solar: .orange
+        case .rainPrecipitation: .cyan
+        case .solarUV: .orange
         case .lightning: .yellow
         case .airQuality: .purple
         case .soilTemperature, .soilMoisture, .soilTension: .brown
@@ -93,7 +93,7 @@ struct SensorsSettingsTab: View {
                 .foregroundStyle(isGood ? .green : .red)
             Text(isGood ? "Good" : "Low")
                 .font(.system(.body, design: .rounded, weight: .medium))
-                .foregroundStyle(isGood ? .primary : .red)
+                .foregroundStyle(isGood ? Color.primary : Color.red)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3)

@@ -10,6 +10,7 @@ import AmbientWeather
 
 struct MenuBarPopoverView: View {
     @EnvironmentObject var manager: WeatherManager
+    @Environment(\.openSettings) private var openSettings
     @State private var showAllSensors = false
 
     var body: some View {
@@ -144,7 +145,11 @@ struct MenuBarPopoverView: View {
 
     private var footerView: some View {
         HStack {
-            SettingsLink {
+            Button {
+                // Dismiss the popover by closing its window, then open Settings
+                NSApp.keyWindow?.close()
+                openSettings()
+            } label: {
                 Label("Settings", systemImage: "gear")
             }
             .buttonStyle(.borderless)

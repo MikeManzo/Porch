@@ -38,7 +38,7 @@ struct PorchApp: App {
             SettingsView()
                 .environmentObject(weatherManager)
         }
-        .defaultSize(width: 520, height: 400)
+        .defaultSize(width: 640, height: 460)
     }
 
     @discardableResult

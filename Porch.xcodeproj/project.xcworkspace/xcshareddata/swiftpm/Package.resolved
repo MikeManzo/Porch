@@ -1,0 +1,24 @@
+{
+  "originHash" : "295b5a7cbacdc3bdd8d0dfb38fa3e5dbc3e9a3963b47b43157d64189a582294b",
+  "pins" : [
+    {
+      "identity" : "ambientweathersocket",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/MikeManzo/AmbientWeatherSocket",
+      "state" : {
+        "branch" : "main",
+        "revision" : "67b4750e362df20237c3595b36efb6a332893497"
+      }
+    },
+    {
+      "identity" : "starscream",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/daltoniam/Starscream.git",
+      "state" : {
+        "revision" : "c6bfd1af48efcc9a9ad203665db12375ba6b145a",
+        "version" : "4.0.8"
+      }
+    }
+  ],
+  "version" : 3
+}

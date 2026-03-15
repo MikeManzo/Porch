@@ -25,36 +25,7 @@ struct GeneralSettingsTab: View {
                     .foregroundStyle(.purple)
             }
 
-            Section {
-                HStack(spacing: 14) {
-                    Image(systemName: "cloud.sun.rain.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(.cyan, .orange, .blue)
-                        .symbolRenderingMode(.hierarchical)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Porch")
-                            .font(.title3.weight(.semibold))
-                        HStack(spacing: 8) {
-                            Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            Text("Build \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1")")
-                                .font(.caption)
-                                .foregroundStyle(.quaternary)
-                        }
-                    }
-                }
-                .padding(.vertical, 4)
-
-                Link(destination: URL(string: "https://ambientweather.net")!) {
-                    Label("Ambient Weather Dashboard", systemImage: "globe")
-                }
-                .buttonStyle(.glass)
-            } header: {
-                Label("About", systemImage: "info.circle")
-                    .foregroundStyle(.purple)
-            }
         }
         .formStyle(.grouped)
     }

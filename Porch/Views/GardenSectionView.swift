@@ -16,7 +16,7 @@ struct GardenSectionView: View {
 
     /// Garden-related sensor categories
     private static let gardenCategories: Set<SensorCategory> = [
-        .soilConditions, .agriculturalDerived
+        .soilTemperature, .soilMoisture, .soilTension, .leafWetness, .agriculturalDerived
     ]
 
     /// Extract garden sensors from the categorized sensor list
@@ -48,7 +48,6 @@ struct GardenSectionView: View {
     }
 
     private func gardenTile(key: String) -> some View {
-        let category = AmbientLastData.propertyCategories[key] ?? .unknown
         return HStack(spacing: 8) {
             Image(systemName: tintIcon(for: key))
                 .font(.caption)

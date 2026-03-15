@@ -13,6 +13,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     case alerts = "Alerts"
     case connection = "Connection"
     case general = "General"
+    case about = "About"
 
     var id: String { rawValue }
 
@@ -23,6 +24,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .alerts: "bell.badge"
         case .connection: "wifi"
         case .general: "gear"
+        case .about: "info.circle"
         }
     }
 
@@ -33,18 +35,10 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .alerts: .orange
         case .connection: .blue
         case .general: .purple
+        case .about: .pink
         }
     }
 
-    var subtitle: String {
-        switch self {
-        case .display: "Units, menubar & quick stats"
-        case .sensors: "Live sensor readings"
-        case .alerts: "Notification thresholds"
-        case .connection: "API keys & station"
-        case .general: "Startup & about"
-        }
-    }
 }
 
 struct SettingsView: View {
@@ -86,42 +80,14 @@ struct SettingsView: View {
                 .padding(.vertical, 8)
             }
             .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 210)
+            .toolbar(removing: .sidebarToggle)
         } detail: {
-            VStack(spacing: 0) {
-                // Themed pane header
-                paneHeader
-
-                Divider()
-
-                // Pane content
-                detailView
-            }
+            detailView
+                .toolbar(removing: .title)
         }
+        .toolbar(.hidden)
         .preferredColorScheme(.dark)
         .frame(width: 640, height: 460)
-    }
-
-    // MARK: - Pane Header
-
-    private var paneHeader: some View {
-        HStack(spacing: 12) {
-            Image(systemName: selectedPane.icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(selectedPane.accent)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(selectedPane.rawValue)
-                    .font(.title3.weight(.semibold))
-                Text(selectedPane.subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(.ultraThinMaterial)
     }
 
     // MARK: - Detail Content
@@ -139,6 +105,8 @@ struct SettingsView: View {
             ConnectionSettingsTab()
         case .general:
             GeneralSettingsTab()
+        case .about:
+            AboutSettingsTab()
         }
     }
 }

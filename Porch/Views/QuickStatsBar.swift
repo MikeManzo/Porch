@@ -148,7 +148,7 @@ struct QuickStatsBar: View {
     private func formatWind() -> String {
         guard let speed = observation.windSpeedMPH else { return "--" }
         let displaySpeed = isMetric ? speed * 1.60934 : speed
-        return String(format: "%.0f", displaySpeed)
+        return String(format: "%.1f", displaySpeed)
     }
 
     private func formatPressure() -> String {

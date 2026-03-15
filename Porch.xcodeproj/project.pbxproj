@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2779B0AE2F64C53100796366 /* AmbientWeather in Frameworks */ = {isa = PBXBuildFile; productRef = 2779B0AD2F64C53100796366 /* AmbientWeather */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		2779B0952F64BD7D00796366 /* Porch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Porch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2779B0AE2F64C53100796366 /* AmbientWeather in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = Porch;
 			packageProductDependencies = (
+				2779B0AD2F64C53100796366 /* AmbientWeather */,
 			);
 			productName = Porch;
 			productReference = 2779B0952F64BD7D00796366 /* Porch.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = 2779B08C2F64BD7D00796366;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2779B0AC2F64C53100796366 /* XCRemoteSwiftPackageReference "AmbientWeatherSocket" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2779B0962F64BD7D00796366 /* Products */;
 			projectDirPath = "";
@@ -158,6 +167,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = Porch/Porch.entitlements;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 3ETXMLGRJN;
@@ -222,6 +232,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = Porch/Porch.entitlements;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 3ETXMLGRJN;
@@ -259,6 +270,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -291,6 +303,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -331,6 +344,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2779B0AC2F64C53100796366 /* XCRemoteSwiftPackageReference "AmbientWeatherSocket" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/MikeManzo/AmbientWeatherSocket";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2779B0AD2F64C53100796366 /* AmbientWeather */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2779B0AC2F64C53100796366 /* XCRemoteSwiftPackageReference "AmbientWeatherSocket" */;
+			productName = AmbientWeather;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2779B08D2F64BD7D00796366 /* Project object */;
 }

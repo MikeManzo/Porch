@@ -11,6 +11,9 @@ import AmbientWeather
 /// Large hero display showing the primary temperature reading and feels-like
 struct WeatherHeroView: View {
     let observation: AmbientLastData
+    @EnvironmentObject var manager: WeatherManager
+
+    private var isMetric: Bool { manager.unitSystem == .metric }
 
     var body: some View {
         VStack(spacing: 4) {
@@ -22,7 +25,8 @@ struct WeatherHeroView: View {
 
             // Primary temperature
             if let temp = observation.tempF {
-                Text("\(temp, specifier: "%.1f")\u{00B0}")
+                let displayTemp = isMetric ? (temp - 32) * 5.0 / 9.0 : temp
+                Text("\(displayTemp, specifier: "%.1f")\u{00B0}")
                     .font(.system(size: 56, weight: .thin, design: .rounded))
                     .contentTransition(.numericText())
             } else {
@@ -34,7 +38,8 @@ struct WeatherHeroView: View {
             // Feels like + condition summary
             HStack(spacing: 12) {
                 if let feelsLike = observation.feelsLike {
-                    Label("Feels \(feelsLike, specifier: "%.0f")\u{00B0}", systemImage: "person.and.background.dotted")
+                    let displayFL = isMetric ? (feelsLike - 32) * 5.0 / 9.0 : feelsLike
+                    Label("Feels \(displayFL, specifier: "%.0f")\u{00B0}", systemImage: "person.and.background.dotted")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

@@ -15,12 +15,12 @@ struct WindCompassView: View {
         ZStack {
             // Compass ring
             Circle()
-                .stroke(.quaternary, lineWidth: 1.5)
-                .frame(width: 24, height: 24)
+                .stroke(.quaternary, lineWidth: 1)
+                .frame(width: 16, height: 16)
 
             // Direction arrow
             Image(systemName: "location.north.fill")
-                .font(.system(size: 12))
+                .font(.system(size: 8))
                 .foregroundStyle(.primary)
                 .rotationEffect(.degrees(Double(degrees)))
         }

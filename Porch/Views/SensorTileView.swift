@@ -11,6 +11,7 @@ import AmbientWeather
 struct SensorTileView: View {
     let sensorKey: String
     let observation: AmbientLastData
+    @EnvironmentObject var manager: WeatherManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -19,7 +20,7 @@ struct SensorTileView: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
-            Text(SensorFormatter.menuBarString(for: sensorKey, from: observation))
+            Text(SensorFormatter.menuBarString(for: sensorKey, from: observation, unitSystem: manager.unitSystem))
                 .font(.system(.body, design: .rounded, weight: .medium))
                 .lineLimit(1)
         }
@@ -29,6 +30,6 @@ struct SensorTileView: View {
     }
 
     private var label: String {
-        AmbientLastData.sensorDescriptions[sensorKey] ?? sensorKey
+        SensorFormatter.sensorDescription(for: sensorKey, unitSystem: manager.unitSystem)
     }
 }
