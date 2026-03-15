@@ -6,12 +6,58 @@
 //
 
 import SwiftUI
+import SwiftData
+import AmbientWeather
 
 @main
 struct PorchApp: App {
+    @StateObject private var weatherManager = WeatherManager()
+    let modelContainer: ModelContainer
+
+    init() {
+        do {
+            modelContainer = try ModelContainer(for: WeatherSnapshot.self)
+        } catch {
+            fatalError("Failed to create model container: \(error)")
+        }
+    }
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        let _ = setupHistoryManager()
+
+        MenuBarExtra {
+            MenuBarPopoverView()
+                .environmentObject(weatherManager)
+                .modelContainer(modelContainer)
+        } label: {
+            MenuBarLabel(manager: weatherManager)
+        }
+        .menuBarExtraStyle(.window)
+
+        Settings {
+            SettingsView()
+                .environmentObject(weatherManager)
+        }
+        .defaultSize(width: 520, height: 400)
+    }
+
+    @discardableResult
+    private func setupHistoryManager() -> Bool {
+        if weatherManager.historyManager == nil {
+            weatherManager.historyManager = HistoryManager(modelContainer: modelContainer)
+        }
+        return true
+    }
+}
+
+/// Dedicated view for the menubar label.
+struct MenuBarLabel: View {
+    @ObservedObject var manager: WeatherManager
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: manager.menuBarIcon)
+            Text(manager.menuBarLabel)
         }
     }
 }
