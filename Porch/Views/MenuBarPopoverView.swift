@@ -163,8 +163,8 @@ struct MenuBarPopoverView: View {
             }
             .buttonStyle(.borderless)
         }
-        .font(.caption)
+        .font(.body)
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.vertical, 12)
     }
 }
