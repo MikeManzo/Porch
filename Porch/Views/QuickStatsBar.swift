@@ -27,8 +27,8 @@ struct QuickStatsBar: View {
                     statView(for: key)
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 12)
             .glassEffect(.regular, in: .rect(cornerRadius: 12))
         }
         .padding(.horizontal, 12)
@@ -69,20 +69,23 @@ struct QuickStatsBar: View {
     // MARK: - Wind Stat with Compass
 
     private var windStat: some View {
-        VStack(spacing: 3) {
-            if let dir = observation.windDir {
-                WindCompassView(degrees: dir)
-            } else {
-                Image(systemName: "wind")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        VStack(spacing: 4) {
+            Group {
+                if let dir = observation.windDir {
+                    WindCompassView(degrees: dir)
+                } else {
+                    Image(systemName: "wind")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
+            .frame(height: 20)
             Text(formatWind())
-                .font(.system(.callout, design: .rounded, weight: .semibold))
+                .font(.system(.body, design: .rounded, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(isMetric ? "km/h" : "mph")
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
@@ -91,21 +94,22 @@ struct QuickStatsBar: View {
     // MARK: - Pressure Stat with Trend Arrow
 
     private var pressureStat: some View {
-        VStack(spacing: 3) {
+        VStack(spacing: 4) {
             Image(systemName: "gauge.with.dots.needle.33percent")
-                .font(.caption)
+                .font(.footnote)
                 .foregroundStyle(.secondary)
+                .frame(height: 20)
             HStack(spacing: 2) {
                 Text(formatPressure())
-                    .font(.system(.callout, design: .rounded, weight: .semibold))
+                    .font(.system(.body, design: .rounded, weight: .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 Image(systemName: manager.pressureTrend.icon)
-                    .font(.system(size: 8, weight: .bold))
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(pressureTrendColor)
             }
             Text("Pressure")
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
@@ -122,16 +126,17 @@ struct QuickStatsBar: View {
     // MARK: - Generic Stat
 
     private func quickStat(icon: String, value: String, label: String) -> some View {
-        VStack(spacing: 3) {
+        VStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.caption)
+                .font(.footnote)
                 .foregroundStyle(.secondary)
+                .frame(height: 20)
             Text(value)
-                .font(.system(.callout, design: .rounded, weight: .semibold))
+                .font(.system(.body, design: .rounded, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(label)
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
@@ -140,7 +145,7 @@ struct QuickStatsBar: View {
     private var verticalDivider: some View {
         Rectangle()
             .fill(.quaternary)
-            .frame(width: 1, height: 28)
+            .frame(width: 1, height: 34)
     }
 
     // MARK: - Formatting

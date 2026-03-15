@@ -16,11 +16,11 @@ struct WindCompassView: View {
             // Compass ring
             Circle()
                 .stroke(.quaternary, lineWidth: 1)
-                .frame(width: 16, height: 16)
+                .frame(width: 20, height: 20)
 
             // Direction arrow
             Image(systemName: "location.north.fill")
-                .font(.system(size: 8))
+                .font(.system(size: 10))
                 .foregroundStyle(.primary)
                 .rotationEffect(.degrees(Double(degrees)))
         }
