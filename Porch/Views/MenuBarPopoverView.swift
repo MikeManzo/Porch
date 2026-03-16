@@ -50,6 +50,12 @@ struct MenuBarPopoverView: View {
                 .padding(.top, 4)
         }
 
+        // Severe weather alerts
+        if !manager.activeWeatherAlerts.isEmpty {
+            SevereWeatherBanner(alerts: manager.activeWeatherAlerts)
+                .padding(.top, 4)
+        }
+
         // Hero temperature display
         WeatherHeroView(observation: data.observation)
 

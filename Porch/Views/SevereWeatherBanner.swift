@@ -14,14 +14,14 @@ struct SevereWeatherBanner: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            ForEach(alerts.prefix(3), id: \.event) { alert in
+            ForEach(Array(alerts.prefix(3).enumerated()), id: \.offset) { _, alert in
                 HStack(spacing: 6) {
                     Image(systemName: iconForSeverity(alert.severity))
                         .foregroundStyle(colorForSeverity(alert.severity))
                         .font(.caption)
 
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(alert.event)
+                        Text(alert.summary)
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
@@ -36,14 +36,12 @@ struct SevereWeatherBanner: View {
 
                     Spacer(minLength: 0)
 
-                    if let url = alert.detailsURL {
-                        Link(destination: url) {
-                            Image(systemName: "arrow.up.forward.square")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.borderless)
+                    Link(destination: alert.detailsURL) {
+                        Image(systemName: "arrow.up.forward.square")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
+                    .buttonStyle(.borderless)
                 }
             }
         }
