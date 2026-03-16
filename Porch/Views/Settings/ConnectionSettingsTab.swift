@@ -12,19 +12,52 @@ struct ConnectionSettingsTab: View {
     @EnvironmentObject var manager: WeatherManager
     @State private var appKeyInput: String = ""
     @State private var apiKeyInput: String = ""
+    @State private var showingKeyHelp = false
 
     var body: some View {
         Form {
-            Section("Ambient Weather Credentials") {
+            Section {
                 TextField("Application Key", text: $appKeyInput)
                     .textFieldStyle(.roundedBorder)
 
                 TextField("API Key", text: $apiKeyInput)
                     .textFieldStyle(.roundedBorder)
 
-                Text("Get your keys from [ambientweather.net/account](https://ambientweather.net/account)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack {
+                    Text("Get your keys from [ambientweather.net/account](https://ambientweather.net/account)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Button {
+                        showingKeyHelp = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(.blue)
+                    }
+                    .buttonStyle(.borderless)
+                    .popover(isPresented: $showingKeyHelp, arrowEdge: .trailing) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Getting Your API Keys")
+                                .font(.headline)
+
+                            VStack(alignment: .leading, spacing: 6) {
+                                stepRow(1, "Go to **ambientweather.net** and sign in")
+                                stepRow(2, "Click your profile name → **Account**")
+                                stepRow(3, "Under **API Keys**, click **Create API Key**")
+                                stepRow(4, "Copy the key and paste it into **API Key** above")
+                                stepRow(5, "Under **Application Keys**, click **Create Application Key**")
+                                stepRow(6, "Copy the key and paste it into **Application Key** above")
+                            }
+                            .font(.callout)
+                        }
+                        .padding(16)
+                        .frame(width: 370)
+                    }
+                }
+            } header: {
+                Text("Ambient Weather Credentials")
             }
 
             Section("Connection") {
@@ -85,6 +118,17 @@ struct ConnectionSettingsTab: View {
         .onAppear {
             appKeyInput = manager.applicationKey
             apiKeyInput = manager.apiKeysRaw
+        }
+    }
+
+    private func stepRow(_ number: Int, _ text: LocalizedStringKey) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("\(number).")
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+                .frame(width: 16, alignment: .trailing)
+            Text(text)
+                .foregroundStyle(.primary)
         }
     }
 
