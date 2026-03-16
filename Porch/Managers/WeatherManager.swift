@@ -12,6 +12,54 @@ import UserNotifications
 import WeatherKit
 import CoreLocation
 
+// MARK: - Snooze Types
+
+/// Describes how an alert is currently snoozed
+enum SnoozeKind: Codable, Equatable {
+    case timed(until: Date)
+    case untilCleared
+}
+
+/// Persisted snooze state for one alert key
+struct SnoozeEntry: Codable, Equatable {
+    let kind: SnoozeKind
+    var hasCleared: Bool
+}
+
+// MARK: - Notification Delegate
+
+/// Lightweight delegate that forwards notification actions back to WeatherManager
+final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
+    weak var manager: WeatherManager?
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let actionID = response.actionIdentifier
+        let alertKey: String
+        if let key = response.notification.request.content.userInfo["alertKey"] as? String {
+            alertKey = key
+        } else {
+            alertKey = response.notification.request.identifier
+        }
+
+        Task { @MainActor [weak self] in
+            self?.manager?.handleSnoozeAction(actionID: actionID, alertKey: alertKey)
+        }
+        completionHandler()
+    }
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
+    }
+}
+
 /// Central state manager that wraps AmbientWebSocket and manages user preferences
 @MainActor
 class WeatherManager: ObservableObject {
@@ -181,6 +229,14 @@ class WeatherManager: ObservableObject {
         didSet { UserDefaults.standard.set(severeWeatherAlertEnabled, forKey: "severeWeatherAlertEnabled") }
     }
 
+    /// Default re-alert interval in seconds (replaces hardcoded 30 min).
+    @Published var defaultReAlertInterval: TimeInterval = {
+        let stored = UserDefaults.standard.double(forKey: "defaultReAlertInterval")
+        return stored > 0 ? stored : 1800
+    }() {
+        didSet { UserDefaults.standard.set(defaultReAlertInterval, forKey: "defaultReAlertInterval") }
+    }
+
     // MARK: - Deferred Bindings
 
     /// Creates a Binding that defers the property set to the next run loop,
@@ -202,7 +258,22 @@ class WeatherManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var lastAlertTimes: [String: Date] = [:]
     private var weatherKitTimer: Timer?
+    private let notificationDelegate = NotificationDelegate()
     var historyManager: HistoryManager?
+
+    /// Per-key snooze state, persisted as JSON in UserDefaults.
+    private var snoozeStates: [String: SnoozeEntry] = {
+        guard let data = UserDefaults.standard.data(forKey: "snoozeStates"),
+              let decoded = try? JSONDecoder().decode([String: SnoozeEntry].self, from: data)
+        else { return [:] }
+        return decoded
+    }()
+
+    private func persistSnoozeStates() {
+        if let data = try? JSONEncoder().encode(snoozeStates) {
+            UserDefaults.standard.set(data, forKey: "snoozeStates")
+        }
+    }
 
     // MARK: - Init
 
@@ -225,6 +296,11 @@ class WeatherManager: ObservableObject {
         if UserDefaults.standard.object(forKey: "highPM25Alert") == nil { highPM25Alert = 55 }
         if UserDefaults.standard.object(forKey: "highCO2Alert") == nil { highCO2Alert = 1000 }
         if UserDefaults.standard.object(forKey: "severeWeatherAlertEnabled") == nil { severeWeatherAlertEnabled = true }
+
+        // Register notification actions and delegate (must happen before sending any notifications)
+        registerNotificationCategory()
+        notificationDelegate.manager = self
+        UNUserNotificationCenter.current().delegate = notificationDelegate
 
         // Auto-connect at launch if credentials are stored
         if !applicationKey.isEmpty && !apiKeysRaw.isEmpty {
@@ -430,40 +506,50 @@ class WeatherManager: ObservableObject {
     // MARK: - Notification Alerts
 
     private func checkAlerts(_ observation: AmbientLastData) {
+        // Track which conditions are currently active for "Until Cleared" logic
+        var activeKeys = Set<String>()
+
         if tempAlertEnabled, let temp = observation.tempF {
             if highTempAlert > 0 && temp >= highTempAlert {
+                activeKeys.insert("highTemp")
                 sendAlert(key: "highTemp", title: "High Temperature Alert",
                           body: "Temperature is \(String(format: "%.1f", temp))\u{00B0}F")
             }
             if lowTempAlert > 0 && temp <= lowTempAlert {
+                activeKeys.insert("lowTemp")
                 sendAlert(key: "lowTemp", title: "Low Temperature Alert",
                           body: "Temperature is \(String(format: "%.1f", temp))\u{00B0}F")
             }
         }
 
         if windAlertEnabled, let wind = observation.windSpeedMPH, highWindAlert > 0, wind >= highWindAlert {
+            activeKeys.insert("highWind")
             sendAlert(key: "highWind", title: "High Wind Alert",
                       body: "Wind speed is \(String(format: "%.0f", wind)) mph")
         }
 
         if weatherAlertEnabled {
             if let uv = observation.uv, highUVAlert > 0, Double(uv) >= highUVAlert {
+                activeKeys.insert("highUV")
                 sendAlert(key: "highUV", title: "High UV Index Alert",
                           body: "UV index is \(uv) — protect your skin!")
             }
 
             if let rain = observation.hourlyRainIn, heavyRainAlert > 0, rain >= heavyRainAlert {
+                activeKeys.insert("heavyRain")
                 sendAlert(key: "heavyRain", title: "Heavy Rain Alert",
                           body: "Rain rate is \(String(format: "%.2f", rain))\"/hr")
             }
 
             if let humidity = observation.humidity, highHumidityAlert > 0, Double(humidity) >= highHumidityAlert {
+                activeKeys.insert("highHumidity")
                 sendAlert(key: "highHumidity", title: "High Humidity Alert",
                           body: "Humidity is \(humidity)%")
             }
         }
 
         if lightningAlertEnabled, let strikes = observation.lightningDay, strikes > 0 {
+            activeKeys.insert("lightning")
             let distInfo: String
             if let dist = observation.lightningDistance {
                 distInfo = " (nearest: \(String(format: "%.1f", dist)) mi)"
@@ -476,11 +562,13 @@ class WeatherManager: ObservableObject {
 
         if airQualityAlertEnabled {
             if let pm25 = observation.pm25, highPM25Alert > 0, pm25 >= highPM25Alert {
+                activeKeys.insert("highPM25")
                 sendAlert(key: "highPM25", title: "Poor Air Quality Alert",
                           body: "PM2.5 is \(String(format: "%.1f", pm25)) µg/m³")
             }
 
             if let co2 = observation.co2, highCO2Alert > 0, Double(co2) >= highCO2Alert {
+                activeKeys.insert("highCO2")
                 sendAlert(key: "highCO2", title: "High CO₂ Alert",
                           body: "CO₂ is \(co2) ppm — ventilate!")
             }
@@ -495,6 +583,7 @@ class WeatherManager: ObservableObject {
                 if childMirror.displayStyle == .optional,
                    let inner = childMirror.children.first?.value,
                    let intVal = inner as? Int, intVal == 1 {
+                    activeKeys.insert("leak_\(label)")
                     let desc = AmbientLastData.sensorDescriptions[label] ?? label
                     sendAlert(key: "leak_\(label)", title: "Water Leak Detected!",
                               body: "\(desc) reports water detected")
@@ -503,24 +592,60 @@ class WeatherManager: ObservableObject {
         }
 
         if batteryAlertEnabled && !lowBatterySensors.isEmpty {
+            activeKeys.insert("battery")
             let names = lowBatterySensors.map {
                 AmbientLastData.sensorDescriptions[$0] ?? $0
             }.joined(separator: ", ")
             sendAlert(key: "battery", title: "Low Battery Warning",
                       body: "Low battery: \(names)")
         }
+
+        // Update "Until Cleared" snooze states
+        var didChange = false
+        for (key, entry) in snoozeStates {
+            guard case .untilCleared = entry.kind, !entry.hasCleared, !key.hasPrefix("weatherkit_") else { continue }
+            if !activeKeys.contains(key) {
+                snoozeStates[key] = SnoozeEntry(kind: .untilCleared, hasCleared: true)
+                didChange = true
+            }
+        }
+        if didChange { persistSnoozeStates() }
     }
 
     private func sendAlert(key: String, title: String, body: String) {
-        // Throttle: max once per 30 minutes per alert key
         let now = Date()
-        if let last = lastAlertTimes[key], now.timeIntervalSince(last) < 1800 { return }
+
+        // 1. Check snooze state
+        if let snooze = snoozeStates[key] {
+            switch snooze.kind {
+            case .timed(let until):
+                if now < until {
+                    return // Still snoozed
+                } else {
+                    snoozeStates.removeValue(forKey: key)
+                    persistSnoozeStates()
+                }
+            case .untilCleared:
+                if !snooze.hasCleared {
+                    return // Condition hasn't cleared yet
+                } else {
+                    snoozeStates.removeValue(forKey: key)
+                    persistSnoozeStates()
+                }
+            }
+        }
+
+        // 2. Configurable throttle (replaces hardcoded 30 min)
+        if let last = lastAlertTimes[key], now.timeIntervalSince(last) < defaultReAlertInterval { return }
         lastAlertTimes[key] = now
 
+        // 3. Build and send notification with snooze actions
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
         content.sound = .default
+        content.categoryIdentifier = "PORCH_ALERT"
+        content.userInfo = ["alertKey": key]
 
         let request = UNNotificationRequest(identifier: "porch_\(key)_\(Int(now.timeIntervalSince1970))",
                                             content: content, trigger: nil)
@@ -529,6 +654,42 @@ class WeatherManager: ObservableObject {
 
     func requestNotificationPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    }
+
+    private func registerNotificationCategory() {
+        let snooze1h = UNNotificationAction(identifier: "SNOOZE_1H", title: "Snooze 1 Hour", options: [])
+        let snooze8h = UNNotificationAction(identifier: "SNOOZE_8H", title: "Snooze 8 Hours", options: [])
+        let snooze24h = UNNotificationAction(identifier: "SNOOZE_24H", title: "Snooze 24 Hours", options: [])
+        let snoozeCleared = UNNotificationAction(identifier: "SNOOZE_UNTIL_CLEARED", title: "Until Cleared", options: [])
+
+        let category = UNNotificationCategory(
+            identifier: "PORCH_ALERT",
+            actions: [snooze1h, snooze8h, snooze24h, snoozeCleared],
+            intentIdentifiers: [],
+            options: []
+        )
+        UNUserNotificationCenter.current().setNotificationCategories([category])
+    }
+
+    /// Called from the notification delegate when user taps a snooze action
+    func handleSnoozeAction(actionID: String, alertKey: String) {
+        let entry: SnoozeEntry?
+        switch actionID {
+        case "SNOOZE_1H":
+            entry = SnoozeEntry(kind: .timed(until: Date().addingTimeInterval(3600)), hasCleared: false)
+        case "SNOOZE_8H":
+            entry = SnoozeEntry(kind: .timed(until: Date().addingTimeInterval(28800)), hasCleared: false)
+        case "SNOOZE_24H":
+            entry = SnoozeEntry(kind: .timed(until: Date().addingTimeInterval(86400)), hasCleared: false)
+        case "SNOOZE_UNTIL_CLEARED":
+            entry = SnoozeEntry(kind: .untilCleared, hasCleared: false)
+        default:
+            entry = nil
+        }
+        if let entry {
+            snoozeStates[alertKey] = entry
+            persistSnoozeStates()
+        }
     }
 
     // MARK: - WeatherKit Severe Weather Polling
@@ -572,6 +733,19 @@ class WeatherManager: ObservableObject {
                     )
                 }
             }
+            // Update "Until Cleared" snooze states for WeatherKit alerts
+            var didChange = false
+            for (key, entry) in snoozeStates {
+                guard key.hasPrefix("weatherkit_"), case .untilCleared = entry.kind, !entry.hasCleared else { continue }
+                let stillActive = currentAlerts.contains { alert in
+                    "weatherkit_\(alert.summary)_\(alert.region ?? "unknown")" == key
+                }
+                if !stillActive {
+                    snoozeStates[key] = SnoozeEntry(kind: .untilCleared, hasCleared: true)
+                    didChange = true
+                }
+            }
+            if didChange { persistSnoozeStates() }
         } catch {
             // Silently fail — WeatherKit unavailability should not disrupt the app
         }

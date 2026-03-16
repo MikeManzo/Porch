@@ -24,6 +24,26 @@ struct AlertsSettingsTab: View {
             }
 
             Section {
+                Picker(selection: manager.deferredBinding(for: \.defaultReAlertInterval)) {
+                    Text("30 Minutes").tag(TimeInterval(1800))
+                    Text("1 Hour").tag(TimeInterval(3600))
+                    Text("4 Hours").tag(TimeInterval(14400))
+                    Text("8 Hours").tag(TimeInterval(28800))
+                    Text("24 Hours").tag(TimeInterval(86400))
+                } label: {
+                    Label("Re-Alert Interval", systemImage: "clock.arrow.circlepath")
+                }
+
+                Text("How often to repeat an alert if you don't interact with the notification. Snooze options on each notification override this.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } header: {
+                Label("Notification Timing", systemImage: "clock.arrow.circlepath")
+                    .foregroundStyle(.blue)
+            }
+            .disabled(!manager.alertsEnabled)
+
+            Section {
                 Toggle(isOn: manager.deferredBinding(for: \.severeWeatherAlertEnabled)) {
                     Label("Severe Weather Notifications", systemImage: "exclamationmark.triangle.fill")
                 }
