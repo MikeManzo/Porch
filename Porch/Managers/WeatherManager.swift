@@ -38,11 +38,19 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let actionID = response.actionIdentifier
+        let userInfo = response.notification.request.content.userInfo
         let alertKey: String
-        if let key = response.notification.request.content.userInfo["alertKey"] as? String {
+        if let key = userInfo["alertKey"] as? String {
             alertKey = key
         } else {
             alertKey = response.notification.request.identifier
+        }
+
+        // If user clicked the notification (not a snooze action), open the details URL
+        if actionID == UNNotificationDefaultActionIdentifier,
+           let urlString = userInfo["detailsURL"] as? String,
+           let url = URL(string: urlString) {
+            NSWorkspace.shared.open(url)
         }
 
         Task { @MainActor [weak self] in
@@ -445,6 +453,13 @@ class WeatherManager: ObservableObject {
         if let data = weatherData {
             historyManager?.saveSnapshot(from: data)
         }
+        // Trigger first WeatherKit fetch once we have valid data
+        if severeWeatherAlertEnabled && !hasFetchedWeatherKitOnce {
+            hasFetchedWeatherKitOnce = true
+            Task {
+                await fetchWeatherKitAlerts()
+            }
+        }
     }
 
     // MARK: - Pressure Trend
@@ -612,7 +627,7 @@ class WeatherManager: ObservableObject {
         if didChange { persistSnoozeStates() }
     }
 
-    private func sendAlert(key: String, title: String, body: String) {
+    private func sendAlert(key: String, title: String, body: String, detailsURL: URL? = nil) {
         let now = Date()
 
         // 1. Check snooze state
@@ -645,7 +660,11 @@ class WeatherManager: ObservableObject {
         content.body = body
         content.sound = .default
         content.categoryIdentifier = "PORCH_ALERT"
-        content.userInfo = ["alertKey": key]
+        var info: [String: Any] = ["alertKey": key]
+        if let url = detailsURL {
+            info["detailsURL"] = url.absoluteString
+        }
+        content.userInfo = info
 
         let request = UNNotificationRequest(identifier: "porch_\(key)_\(Int(now.timeIntervalSince1970))",
                                             content: content, trigger: nil)
@@ -694,11 +713,12 @@ class WeatherManager: ObservableObject {
 
     // MARK: - WeatherKit Severe Weather Polling
 
-    private func startWeatherKitPolling() {
-        // Fetch immediately on connect
-        Task { await fetchWeatherKitAlerts() }
+    private var hasFetchedWeatherKitOnce = false
 
-        // Then poll every 15 minutes
+    private func startWeatherKitPolling() {
+        hasFetchedWeatherKitOnce = false
+
+        // Poll every 15 minutes (first fetch triggers when data arrives in processNewObservation)
         weatherKitTimer = Timer.scheduledTimer(withTimeInterval: 900, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 await self?.fetchWeatherKitAlerts()
@@ -721,15 +741,26 @@ class WeatherManager: ObservableObject {
             }
 
             self.activeWeatherAlerts = currentAlerts
+            print("[Porch] WeatherKit: \(currentAlerts.count) active alert(s)")
+            for alert in currentAlerts {
+                print("[Porch]   → \(alert.summary) | severity: \(alert.severity) | region: \(alert.region ?? "unknown")")
+            }
 
-            // Send notifications for severe/extreme alerts (if enabled)
+            // Send notifications for moderate/severe/extreme alerts (if enabled)
             if alertsEnabled && severeWeatherAlertEnabled {
-                for alert in currentAlerts where alert.severity == .severe || alert.severity == .extreme {
+                for alert in currentAlerts where alert.severity == .moderate || alert.severity == .severe || alert.severity == .extreme {
                     let key = "weatherkit_\(alert.summary)_\(alert.region ?? "unknown")"
+                    let prefix: String
+                    switch alert.severity {
+                    case .extreme: prefix = "EXTREME"
+                    case .severe: prefix = "SEVERE"
+                    default: prefix = "WATCH"
+                    }
                     sendAlert(
                         key: key,
-                        title: "\(alert.severity == .extreme ? "EXTREME" : "SEVERE"): \(alert.summary)",
-                        body: alert.region ?? "Weather alert for your area"
+                        title: "\(prefix): \(alert.summary)",
+                        body: alert.region ?? "Weather alert for your area",
+                        detailsURL: alert.detailsURL
                     )
                 }
             }
@@ -747,7 +778,7 @@ class WeatherManager: ObservableObject {
             }
             if didChange { persistSnoozeStates() }
         } catch {
-            // Silently fail — WeatherKit unavailability should not disrupt the app
+            print("[Porch] WeatherKit error: \(error.localizedDescription)")
         }
     }
 }

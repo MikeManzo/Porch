@@ -53,7 +53,7 @@ struct ConnectionSettingsTab: View {
                             .font(.callout)
                         }
                         .padding(16)
-                        .frame(width: 370)
+                        .frame(width: 420)
                     }
                 }
             } header: {

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import MapKit
 import AmbientWeather
 
 struct SensorsSettingsTab: View {
@@ -16,6 +17,35 @@ struct SensorsSettingsTab: View {
             let categories = observation.availableSensorsbyCategorySorted
 
             Form {
+                if let coords = manager.weatherData?.info.coords.coords {
+                    Section {
+                        let position = MapCameraPosition.region(MKCoordinateRegion(
+                            center: CLLocationCoordinate2D(latitude: coords.lat, longitude: coords.lon),
+                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                        ))
+                        Map(initialPosition: position) {
+                            Marker(manager.stationName, coordinate: CLLocationCoordinate2D(
+                                latitude: coords.lat, longitude: coords.lon
+                            ))
+                        }
+                        .frame(height: 150)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .allowsHitTesting(false)
+
+                        LabeledContent("Station", value: manager.stationName)
+                        LabeledContent("Location", value: manager.stationLocation)
+                    } header: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "mappin.and.ellipse")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 20, height: 20)
+                                .background(.red, in: RoundedRectangle(cornerRadius: 5))
+                            Text("Station Location")
+                        }
+                    }
+                }
+
                 ForEach(categories, id: \.0) { category, keys in
                     Section {
                         ForEach(keys, id: \.self) { key in
