@@ -26,16 +26,17 @@ source "$ENV_FILE"
 [ -z "$TEAM_ID" ]  && error "TEAM_ID is not set in .env"
 [ "$APPLE_ID" = "your@email.com" ] && error "APPLE_ID is still the placeholder value in .env"
 
-# Pull password securely from Keychain
-APPLE_ID_PASSWORD=$(security find-generic-password \
-  -a "Porch" \
-  -s "PorchReleaseScript" \
-  -w 2>/dev/null)
+# Notarization uses a stored keychain profile (Apple's recommended approach).
+# Set it up once with:
+#   xcrun notarytool store-credentials "PorchRelease" \
+#     --apple-id "mike.manzo@mac.com" --team-id "3ETXMLGRJN"
+# (It will prompt for your app-specific password and save everything securely.)
+NOTARY_PROFILE="PorchRelease"
 
-if [ -z "$APPLE_ID_PASSWORD" ]; then
-  error "App-specific password not found in Keychain. Run this once to store it:
-  security add-generic-password -a \"Porch\" -s \"PorchReleaseScript\" -w \"xxxx-xxxx-xxxx-xxxx\""
-fi
+# Verify the profile exists
+xcrun notarytool info --keychain-profile "$NOTARY_PROFILE" 2>&1 | grep -q "error" && \
+  error "Notarization keychain profile '$NOTARY_PROFILE' not found. Run this once to set it up:
+  xcrun notarytool store-credentials \"PorchRelease\" --apple-id \"$APPLE_ID\" --team-id \"$TEAM_ID\""
 
 # ── Paths ────────────────────────────────────────────────────
 WORK_DIR=~/Desktop/PorchRelease
@@ -142,9 +143,7 @@ info "Notarizing app (this may take a few minutes)..."
 ditto -c -k --keepParent "$APP_PATH" "$NOTARIZE_ZIP"
 
 xcrun notarytool submit "$NOTARIZE_ZIP" \
-  --apple-id "$APPLE_ID" \
-  --password "$APPLE_ID_PASSWORD" \
-  --team-id "$TEAM_ID" \
+  --keychain-profile "$NOTARY_PROFILE" \
   --wait
 
 info "Stapling notarization ticket..."

@@ -117,6 +117,8 @@ class WeatherManager: ObservableObject {
 
     @Published private(set) var dailyHighTemp: Double?
     @Published private(set) var dailyLowTemp: Double?
+    @Published private(set) var dailyHighIndoorTemp: Double?
+    @Published private(set) var dailyLowIndoorTemp: Double?
     @Published private(set) var dailyHighWind: Double?
     private var extremesDate: String = "" // tracks which day we're on
 
@@ -300,6 +302,8 @@ class WeatherManager: ObservableObject {
         extremesDate = UserDefaults.standard.string(forKey: "extremesDate") ?? ""
         dailyHighTemp = UserDefaults.standard.object(forKey: "dailyHighTemp") as? Double
         dailyLowTemp = UserDefaults.standard.object(forKey: "dailyLowTemp") as? Double
+        dailyHighIndoorTemp = UserDefaults.standard.object(forKey: "dailyHighIndoorTemp") as? Double
+        dailyLowIndoorTemp = UserDefaults.standard.object(forKey: "dailyLowIndoorTemp") as? Double
         dailyHighWind = UserDefaults.standard.object(forKey: "dailyHighWind") as? Double
 
         // Set default alert thresholds if never configured
@@ -497,6 +501,8 @@ class WeatherManager: ObservableObject {
             extremesDate = today
             dailyHighTemp = nil
             dailyLowTemp = nil
+            dailyHighIndoorTemp = nil
+            dailyLowIndoorTemp = nil
             dailyHighWind = nil
             UserDefaults.standard.set(today, forKey: "extremesDate")
         }
@@ -509,6 +515,17 @@ class WeatherManager: ObservableObject {
             if dailyLowTemp == nil || temp < dailyLowTemp! {
                 dailyLowTemp = temp
                 UserDefaults.standard.set(temp, forKey: "dailyLowTemp")
+            }
+        }
+
+        if let temp = observation.tempInF {
+            if dailyHighIndoorTemp == nil || temp > dailyHighIndoorTemp! {
+                dailyHighIndoorTemp = temp
+                UserDefaults.standard.set(temp, forKey: "dailyHighIndoorTemp")
+            }
+            if dailyLowIndoorTemp == nil || temp < dailyLowIndoorTemp! {
+                dailyLowIndoorTemp = temp
+                UserDefaults.standard.set(temp, forKey: "dailyLowIndoorTemp")
             }
         }
 
