@@ -8,20 +8,41 @@
 import SwiftUI
 import Charts
 
-/// A generic trend chart that plots a WeatherSnapshot metric over time using Swift Charts
+/// Time range options for trend charts
+enum ChartTimeRange: String, CaseIterable {
+    case day = "24H"
+    case threeDays = "3D"
+    case week = "7D"
+}
+
+/// An optional second data series overlaid on the same chart
+struct SecondarySeries {
+    let label: String
+    let valuePath: KeyPath<WeatherSnapshot, Double?>
+    let color: Color
+    var convertToMetric: ((Double) -> Double)? = nil
+}
+
+/// A generic trend chart that plots a WeatherSnapshot metric over time using Swift Charts.
+/// Each chart manages its own time range and data loading.
+/// Supports an optional secondary series for indoor/outdoor overlays.
 struct TrendChartView: View {
     let title: String
     let icon: String
-    let snapshots: [WeatherSnapshot]
     let valuePath: KeyPath<WeatherSnapshot, Double?>
     let unitSuffix: String
     let color: Color
     let unitSystem: UnitSystem
     var convertToMetric: ((Double) -> Double)? = nil
+    var secondary: SecondarySeries? = nil
+
+    @EnvironmentObject var manager: WeatherManager
+    @State private var timeRange: ChartTimeRange = .day
+    @State private var snapshots: [WeatherSnapshot] = []
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Header
+        VStack(alignment: .leading, spacing: 4) {
+            // Header with inline range picker
             HStack(spacing: 6) {
                 Image(systemName: icon)
                     .foregroundStyle(color)
@@ -29,15 +50,37 @@ struct TrendChartView: View {
                 Text(title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
+
+                // Legend for secondary series
+                if let sec = secondary {
+                    Text("·")
+                        .foregroundStyle(.tertiary)
+                    Circle().fill(sec.color).frame(width: 6, height: 6)
+                    Text(sec.label)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Spacer()
-                if let latest = chartData.last?.value {
+
+                // Inline time range picker
+                Picker("Range", selection: $timeRange) {
+                    ForEach(ChartTimeRange.allCases, id: \.self) { range in
+                        Text(range.rawValue).tag(range)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 120)
+
+                if let latest = primaryData.last?.value {
                     Text("\(latest, specifier: "%.1f")\(unitSuffix)")
                         .font(.system(.subheadline, design: .rounded, weight: .bold))
                         .foregroundStyle(color)
+                        .frame(width: 80, alignment: .trailing)
                 }
             }
 
-            if chartData.isEmpty {
+            if primaryData.isEmpty {
                 Text("Collecting data…")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
@@ -46,10 +89,12 @@ struct TrendChartView: View {
             } else {
                 // Chart
                 Chart {
-                    ForEach(chartData, id: \.timestamp) { point in
+                    // Primary series
+                    ForEach(primaryData, id: \.timestamp) { point in
                         LineMark(
                             x: .value("Time", point.timestamp),
-                            y: .value(title, point.value)
+                            y: .value(title, point.value),
+                            series: .value("Series", "Primary")
                         )
                         .foregroundStyle(color.gradient)
                         .interpolationMethod(.catmullRom)
@@ -68,10 +113,24 @@ struct TrendChartView: View {
                         )
                         .interpolationMethod(.catmullRom)
                     }
+
+                    // Secondary series (if present)
+                    if let sec = secondary {
+                        ForEach(secondaryData, id: \.timestamp) { point in
+                            LineMark(
+                                x: .value("Time", point.timestamp),
+                                y: .value(title, point.value),
+                                series: .value("Series", "Secondary")
+                            )
+                            .foregroundStyle(sec.color)
+                            .interpolationMethod(.catmullRom)
+                            .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                        }
+                    }
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic(desiredCount: 6)) {
-                        AxisValueLabel(format: .dateTime.hour())
+                        AxisValueLabel(format: xAxisFormat)
                             .foregroundStyle(.secondary)
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [4]))
                             .foregroundStyle(.white.opacity(0.08))
@@ -85,24 +144,62 @@ struct TrendChartView: View {
                             .foregroundStyle(.white.opacity(0.08))
                     }
                 }
+                .chartLegend(.hidden)
                 .frame(height: 120)
             }
         }
-        .padding(16)
+        .padding(.horizontal, 14)
+        .padding(.bottom, 10)
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .onAppear { loadData() }
+        .onChange(of: timeRange) { loadData() }
+    }
+
+    // MARK: - X-Axis Format
+
+    private var xAxisFormat: Date.FormatStyle {
+        switch timeRange {
+        case .day:
+            .dateTime.hour()
+        case .threeDays, .week:
+            .dateTime.weekday(.abbreviated)
+        }
+    }
+
+    // MARK: - Data Loading
+
+    private func loadData() {
+        guard let stationID = manager.selectedStationID,
+              let historyManager = manager.historyManager else { return }
+        switch timeRange {
+        case .day:
+            snapshots = historyManager.fetchSnapshots(for: stationID, lastHours: 24)
+        case .threeDays:
+            snapshots = historyManager.fetchSnapshots(for: stationID, lastDays: 3)
+        case .week:
+            snapshots = historyManager.fetchSnapshots(for: stationID, lastDays: 7)
+        }
     }
 
     // MARK: - Data Processing
 
-    private var chartData: [(timestamp: Date, value: Double)] {
+    private var primaryData: [(timestamp: Date, value: Double)] {
+        processData(path: valuePath, converter: convertToMetric)
+    }
+
+    private var secondaryData: [(timestamp: Date, value: Double)] {
+        guard let sec = secondary else { return [] }
+        return processData(path: sec.valuePath, converter: sec.convertToMetric)
+    }
+
+    private func processData(path: KeyPath<WeatherSnapshot, Double?>, converter: ((Double) -> Double)?) -> [(timestamp: Date, value: Double)] {
         let raw: [(timestamp: Date, value: Double)] = snapshots.compactMap { snapshot in
-            guard var value = snapshot[keyPath: valuePath] else { return nil }
-            if let convert = convertToMetric, unitSystem == .metric {
+            guard var value = snapshot[keyPath: path] else { return nil }
+            if let convert = converter, unitSystem == .metric {
                 value = convert(value)
             }
             return (timestamp: snapshot.timestamp, value: value)
         }
-        // Downsample if too many points for smooth rendering
         if raw.count > 2000 {
             return downsample(raw, targetCount: 500)
         }
@@ -134,7 +231,6 @@ struct TrendChartView: View {
                 bucketTimestamps = [point.timestamp]
             }
         }
-        // Final bucket
         if !bucketValues.isEmpty {
             let avg = bucketValues.reduce(0, +) / Double(bucketValues.count)
             let midIndex = bucketTimestamps.count / 2

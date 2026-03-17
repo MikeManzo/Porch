@@ -13,14 +13,6 @@ import AmbientWeather
 struct WeatherStationView: View {
     @EnvironmentObject var manager: WeatherManager
     @Environment(\.dismiss) private var dismiss
-    @State private var historySnapshots: [WeatherSnapshot] = []
-    @State private var chartTimeRange: ChartTimeRange = .day
-
-    enum ChartTimeRange: String, CaseIterable {
-        case day = "24H"
-        case threeDays = "3D"
-        case week = "7D"
-    }
 
     var body: some View {
         ZStack {
@@ -34,8 +26,6 @@ struct WeatherStationView: View {
             }
         }
         .frame(minWidth: 1100, minHeight: 780)
-        .onAppear { loadHistory() }
-        .onChange(of: chartTimeRange) { loadHistory() }
     }
 
     // MARK: - Background
@@ -88,7 +78,6 @@ struct WeatherStationView: View {
                             TrendChartView(
                                 title: "Temperature",
                                 icon: "thermometer.medium",
-                                snapshots: historySnapshots,
                                 valuePath: \.temperature,
                                 unitSuffix: manager.unitSystem == .metric ? "°C" : "°F",
                                 color: .orange,
@@ -100,7 +89,6 @@ struct WeatherStationView: View {
                             TrendChartView(
                                 title: "Pressure",
                                 icon: "barometer",
-                                snapshots: historySnapshots,
                                 valuePath: \.pressure,
                                 unitSuffix: manager.unitSystem == .metric ? " hPa" : " inHg",
                                 color: .purple,
@@ -141,17 +129,6 @@ struct WeatherStationView: View {
 
             Spacer()
 
-            // Time range picker
-            Picker("Range", selection: $chartTimeRange) {
-                ForEach(ChartTimeRange.allCases, id: \.self) { range in
-                    Text(range.rawValue).tag(range)
-                }
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 180)
-
-            Spacer()
-
             // Close button
             Button {
                 dismiss()
@@ -176,21 +153,6 @@ struct WeatherStationView: View {
             Text("Waiting for weather data…")
                 .font(.title3)
                 .foregroundStyle(.white.opacity(0.5))
-        }
-    }
-
-    // MARK: - History Loading
-
-    private func loadHistory() {
-        guard let stationID = manager.selectedStationID,
-              let historyManager = manager.historyManager else { return }
-        switch chartTimeRange {
-        case .day:
-            historySnapshots = historyManager.fetchSnapshots(for: stationID, lastHours: 24)
-        case .threeDays:
-            historySnapshots = historyManager.fetchSnapshots(for: stationID, lastDays: 3)
-        case .week:
-            historySnapshots = historyManager.fetchSnapshots(for: stationID, lastDays: 7)
         }
     }
 }
