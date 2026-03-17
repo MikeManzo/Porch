@@ -122,13 +122,16 @@ class WeatherManager: ObservableObject {
 
     // MARK: - Low Battery
 
-    /// Sensor keys with low battery (value = 0)
+    /// Sensor keys with low battery
+    /// Note: Most sensors use 0 = low, but battLightning is inverted (0 = OK, 1 = low)
     var lowBatterySensors: [String] {
         guard let observation = weatherData?.observation else { return [] }
         let batteryKeys = ["battIn", "battRain", "battLightning", "battOut",
                            "batleak1", "batleak2", "batleak3", "batleak4",
                            "battsm1", "battsm2", "battsm3", "battsm4",
                            "batt_co2", "batt_cellgateway"]
+        // Lightning detector battery is inverted: 0 = OK, 1 = low
+        let invertedKeys: Set<String> = ["battLightning"]
         var lowKeys: [String] = []
         let mirror = Mirror(reflecting: observation)
         for child in mirror.children {
@@ -136,10 +139,15 @@ class WeatherManager: ObservableObject {
             let childMirror = Mirror(reflecting: child.value)
             if childMirror.displayStyle == .optional {
                 if let inner = childMirror.children.first?.value {
-                    if let intVal = inner as? Int, intVal == 0 {
-                        lowKeys.append(label)
-                    } else if let strVal = inner as? String, strVal == "0" {
-                        lowKeys.append(label)
+                    let isInverted = invertedKeys.contains(label)
+                    if let intVal = inner as? Int {
+                        if isInverted ? intVal == 1 : intVal == 0 {
+                            lowKeys.append(label)
+                        }
+                    } else if let strVal = inner as? String {
+                        if isInverted ? strVal == "1" : strVal == "0" {
+                            lowKeys.append(label)
+                        }
                     }
                 }
             }
