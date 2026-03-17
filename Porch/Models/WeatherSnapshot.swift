@@ -37,3 +37,13 @@ final class WeatherSnapshot {
         self.stationID = stationID
     }
 }
+
+// MARK: - Double? Accessors for Chart KeyPaths
+
+extension WeatherSnapshot {
+    var humidityDouble: Double? { humidity.map(Double.init) }
+    var uvDouble: Double? { uv.map(Double.init) }
+    var co2Double: Double? { co2.map(Double.init) }
+    var windDirectionDouble: Double? { windDirection.map(Double.init) }
+    var indoorHumidityDouble: Double? { indoorHumidity.map(Double.init) }
+}

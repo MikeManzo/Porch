@@ -90,7 +90,7 @@ struct WeatherStationView: View {
                                 icon: "thermometer.medium",
                                 snapshots: historySnapshots,
                                 valuePath: \.temperature,
-                                unitSuffix: manager.unitSystem == .metric ? "C" : "F",
+                                unitSuffix: manager.unitSystem == .metric ? "°C" : "°F",
                                 color: .orange,
                                 unitSystem: manager.unitSystem,
                                 convertToMetric: { ($0 - 32) * 5.0 / 9.0 }

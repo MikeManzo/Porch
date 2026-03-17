@@ -38,19 +38,21 @@ struct EnvironmentPanel: View {
                 }
             }
 
-            // Lightning
-            if let strikes = observation.lightningDay, strikes > 0 {
+            // Lightning (show whenever detector is present)
+            if let strikes = observation.lightningDay {
                 Divider().opacity(0.2)
                 HStack(spacing: 8) {
                     Image(systemName: "bolt.fill")
-                        .foregroundStyle(.yellow)
+                        .foregroundStyle(strikes > 0 ? .yellow : .white.opacity(0.3))
                         .font(.callout)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("\(strikes) strike\(strikes == 1 ? "" : "s") today")
+                        Text(strikes > 0
+                            ? "\(strikes) strike\(strikes == 1 ? "" : "s") today"
+                            : "0 strikes today")
                             .font(.system(.callout, design: .rounded, weight: .semibold))
                             .foregroundStyle(.white)
                         HStack(spacing: 8) {
-                            if let dist = observation.lightningDistance {
+                            if strikes > 0, let dist = observation.lightningDistance {
                                 let distStr = isMetric
                                     ? String(format: "%.1f km", dist * 1.60934)
                                     : String(format: "%.1f mi", dist)
@@ -58,10 +60,15 @@ struct EnvironmentPanel: View {
                                     .font(.caption)
                                     .foregroundStyle(.white.opacity(0.5))
                             }
-                            if let ts = observation.lightningTime, ts > 0 {
+                            if strikes > 0, let ts = observation.lightningTime, ts > 0 {
                                 Text("Last: \(timeAgo(ts))")
                                     .font(.caption)
                                     .foregroundStyle(.white.opacity(0.5))
+                            }
+                            if strikes == 0 {
+                                Text("All clear")
+                                    .font(.caption)
+                                    .foregroundStyle(.green.opacity(0.6))
                             }
                         }
                     }
@@ -105,7 +112,7 @@ struct EnvironmentPanel: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func timeAgo(_ timestampMs: Int) -> String {
+    private func timeAgo(_ timestampMs: Int64) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestampMs) / 1000.0)
         let minutes = Int(Date().timeIntervalSince(date) / 60)
         if minutes < 60 { return "\(minutes)m ago" }

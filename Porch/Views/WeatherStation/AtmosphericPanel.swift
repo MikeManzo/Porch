@@ -29,7 +29,7 @@ struct AtmosphericPanel: View {
             // Pressure with trend
             if let pressure = observation.baromRelIn {
                 HStack(spacing: 6) {
-                    Image(systemName: manager.pressureTrend.iconName)
+                    Image(systemName: manager.pressureTrend.icon)
                         .font(.caption)
                         .foregroundStyle(pressureTrendColor)
                     VStack(alignment: .leading, spacing: 2) {

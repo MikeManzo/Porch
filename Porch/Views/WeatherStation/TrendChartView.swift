@@ -31,7 +31,7 @@ struct TrendChartView: View {
                     .foregroundStyle(.primary)
                 Spacer()
                 if let latest = chartData.last?.value {
-                    Text("\(latest, specifier: "%.1f")°\(unitSuffix)")
+                    Text("\(latest, specifier: "%.1f")\(unitSuffix)")
                         .font(.system(.subheadline, design: .rounded, weight: .bold))
                         .foregroundStyle(color)
                 }

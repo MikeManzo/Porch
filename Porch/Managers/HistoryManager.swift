@@ -63,6 +63,40 @@ class HistoryManager {
         pruneOldData()
     }
 
+    // MARK: - Query Methods
+
+    /// Fetch snapshots for a station within a date range, ordered by timestamp
+    func fetchSnapshots(
+        for stationID: String,
+        from startDate: Date,
+        to endDate: Date = Date()
+    ) -> [WeatherSnapshot] {
+        let predicate = #Predicate<WeatherSnapshot> { snapshot in
+            snapshot.stationID == stationID &&
+            snapshot.timestamp >= startDate &&
+            snapshot.timestamp <= endDate
+        }
+        let descriptor = FetchDescriptor<WeatherSnapshot>(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+        )
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    /// Convenience: fetch snapshots for the last N hours
+    func fetchSnapshots(for stationID: String, lastHours hours: Int) -> [WeatherSnapshot] {
+        let startDate = Calendar.current.date(byAdding: .hour, value: -hours, to: Date()) ?? Date()
+        return fetchSnapshots(for: stationID, from: startDate)
+    }
+
+    /// Convenience: fetch snapshots for the last N days
+    func fetchSnapshots(for stationID: String, lastDays days: Int) -> [WeatherSnapshot] {
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        return fetchSnapshots(for: stationID, from: startDate)
+    }
+
+    // MARK: - Pruning
+
     /// Remove snapshots older than the retention period
     private func pruneOldData() {
         let cutoff = Calendar.current.date(byAdding: .day, value: -retentionDays, to: Date()) ?? Date()

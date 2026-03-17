@@ -11,6 +11,7 @@ import AmbientWeather
 struct MenuBarPopoverView: View {
     @EnvironmentObject var manager: WeatherManager
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
     @State private var showAllSensors = false
 
     var body: some View {
@@ -152,13 +153,29 @@ struct MenuBarPopoverView: View {
     private var footerView: some View {
         HStack {
             Button {
-                // Dismiss the popover by closing its window, then open Settings
                 NSApp.keyWindow?.close()
                 openSettings()
             } label: {
                 Label("Settings", systemImage: "gear")
             }
             .buttonStyle(.borderless)
+
+            Spacer()
+
+            Button {
+                NSApp.keyWindow?.close()
+                // Focus existing station window or open a new one
+                if let existing = NSApp.windows.first(where: { $0.title == "Weather Station" }) {
+                    existing.makeKeyAndOrderFront(nil)
+                    NSApp.activate(ignoringOtherApps: true)
+                } else {
+                    openWindow(id: "weather-station")
+                }
+            } label: {
+                Label("Station", systemImage: "gauge.with.dots.needle.67percent")
+            }
+            .buttonStyle(.borderless)
+            .disabled(manager.weatherData == nil)
 
             Spacer()
 

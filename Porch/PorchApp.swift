@@ -34,6 +34,15 @@ struct PorchApp: App {
         }
         .menuBarExtraStyle(.window)
 
+        WindowGroup("Weather Station", id: "weather-station") {
+            WeatherStationView()
+                .environmentObject(weatherManager)
+                .modelContainer(modelContainer)
+        }
+        .defaultSize(width: 1280, height: 900)
+        .windowResizability(.contentSize)
+        .windowStyle(.hiddenTitleBar)
+
         Settings {
             SettingsView()
                 .environmentObject(weatherManager)
