@@ -12,6 +12,7 @@ import AmbientWeather
 @main
 struct PorchApp: App {
     @StateObject private var weatherManager = WeatherManager()
+    private let appUpdater = AppUpdater()
     let modelContainer: ModelContainer
 
     init() {
@@ -46,6 +47,7 @@ struct PorchApp: App {
         Settings {
             SettingsView()
                 .environmentObject(weatherManager)
+                .environmentObject(appUpdater)
         }
         .defaultSize(width: 640, height: 460)
     }

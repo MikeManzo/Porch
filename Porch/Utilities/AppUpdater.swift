@@ -17,13 +17,11 @@ final class AppUpdater: NSObject, ObservableObject {
 
     @Published var canCheckForUpdates = false
 
-    private var cancellable: AnyCancellable?
-
     override init() {
         controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
         super.init()
         // Mirror Sparkle's canCheckForUpdates into a @Published property
-        cancellable = controller.updater.publisher(for: \.canCheckForUpdates)
+        controller.updater.publisher(for: \.canCheckForUpdates)
             .assign(to: &$canCheckForUpdates)
     }
 

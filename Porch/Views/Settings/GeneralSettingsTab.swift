@@ -7,8 +7,10 @@
 
 import SwiftUI
 import ServiceManagement
+import Sparkle
 
 struct GeneralSettingsTab: View {
+    @EnvironmentObject var appUpdater: AppUpdater
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
@@ -25,7 +27,31 @@ struct GeneralSettingsTab: View {
                     .foregroundStyle(.purple)
             }
 
+            Section {
+                Button {
+                    appUpdater.checkForUpdates()
+                } label: {
+                    Label("Check for Updates…", systemImage: "arrow.triangle.2.circlepath")
+                }
+                .disabled(!appUpdater.canCheckForUpdates)
 
+                Toggle(isOn: Binding(
+                    get: { appUpdater.updater.automaticallyChecksForUpdates },
+                    set: { appUpdater.updater.automaticallyChecksForUpdates = $0 }
+                )) {
+                    Label("Automatically check for updates", systemImage: "clock.arrow.2.circlepath")
+                }
+
+                Toggle(isOn: Binding(
+                    get: { appUpdater.updater.automaticallyDownloadsUpdates },
+                    set: { appUpdater.updater.automaticallyDownloadsUpdates = $0 }
+                )) {
+                    Label("Automatically download updates", systemImage: "arrow.down.circle")
+                }
+            } header: {
+                Label("Software Update", systemImage: "arrow.uturn.down.circle")
+                    .foregroundStyle(.blue)
+            }
         }
         .formStyle(.grouped)
     }

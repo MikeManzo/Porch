@@ -1,5 +1,5 @@
 {
-  "originHash" : "295b5a7cbacdc3bdd8d0dfb38fa3e5dbc3e9a3963b47b43157d64189a582294b",
+  "originHash" : "217f3d9d33be37c7ff3799c444bcfe6ecc55cea6f09ce6973e2856c86dd24e86",
   "pins" : [
     {
       "identity" : "ambientweathersocket",
@@ -8,6 +8,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "67b4750e362df20237c3595b36efb6a332893497"
+      }
+    },
+    {
+      "identity" : "sparkle",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sparkle-project/Sparkle",
+      "state" : {
+        "revision" : "21d8df80440b1ca3b65fa82e40782f1e5a9e6ba2",
+        "version" : "2.9.0"
       }
     },
     {

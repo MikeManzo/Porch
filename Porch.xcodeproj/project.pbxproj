@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		273C11172F69752400C03BE0 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 273C11162F69752400C03BE0 /* Sparkle */; };
 		2779B0AE2F64C53100796366 /* AmbientWeather in Frameworks */ = {isa = PBXBuildFile; productRef = 2779B0AD2F64C53100796366 /* AmbientWeather */; };
 /* End PBXBuildFile section */
 
@@ -14,9 +15,22 @@
 		2779B0952F64BD7D00796366 /* Porch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Porch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		273C111B2F6978DF00C03BE0 /* Exceptions for "Porch" folder in "Porch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2779B0942F64BD7D00796366 /* Porch */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2779B0972F64BD7D00796366 /* Porch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				273C111B2F6978DF00C03BE0 /* Exceptions for "Porch" folder in "Porch" target */,
+			);
 			path = Porch;
 			sourceTree = "<group>";
 		};
@@ -28,6 +42,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2779B0AE2F64C53100796366 /* AmbientWeather in Frameworks */,
+				273C11172F69752400C03BE0 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +86,7 @@
 			name = Porch;
 			packageProductDependencies = (
 				2779B0AD2F64C53100796366 /* AmbientWeather */,
+				273C11162F69752400C03BE0 /* Sparkle */,
 			);
 			productName = Porch;
 			productReference = 2779B0952F64BD7D00796366 /* Porch.app */;
@@ -102,6 +118,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				2779B0AC2F64C53100796366 /* XCRemoteSwiftPackageReference "AmbientWeatherSocket" */,
+				273C11152F69752400C03BE0 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2779B0962F64BD7D00796366 /* Products */;
@@ -280,6 +297,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Porch/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.weather";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -324,6 +342,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Porch/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.weather";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -368,6 +387,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		273C11152F69752400C03BE0 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.0;
+			};
+		};
 		2779B0AC2F64C53100796366 /* XCRemoteSwiftPackageReference "AmbientWeatherSocket" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/MikeManzo/AmbientWeatherSocket";
@@ -379,6 +406,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		273C11162F69752400C03BE0 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 273C11152F69752400C03BE0 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
 		2779B0AD2F64C53100796366 /* AmbientWeather */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 2779B0AC2F64C53100796366 /* XCRemoteSwiftPackageReference "AmbientWeatherSocket" */;
