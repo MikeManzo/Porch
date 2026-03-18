@@ -124,9 +124,8 @@ struct WeatherStationView: View {
                         // Right column (fixed width)
                         VStack(spacing: 16) {
                             WindPanel(observation: data.observation)
-                            indoorTempSection(data.observation)
-                            EnvironmentPanel(observation: data.observation)
                             IndoorPanel(observation: data.observation)
+                            EnvironmentPanel(observation: data.observation)
                             GardenPanel(observation: data.observation)
                         }
                         .frame(width: 360)
@@ -134,70 +133,6 @@ struct WeatherStationView: View {
                 }
                 .padding(24)
             }
-        }
-    }
-
-    // MARK: - Indoor Temperature (under compass)
-
-    @ViewBuilder
-    private func indoorTempSection(_ observation: AmbientLastData) -> some View {
-        if let temp = observation.tempInF {
-            let isMetric = manager.unitSystem == .metric
-            let display = isMetric ? (temp - 32) * 5.0 / 9.0 : temp
-            let unit = isMetric ? "°C" : "°F"
-
-            VStack(spacing: 8) {
-                HStack {
-                    Image(systemName: "house.fill")
-                        .foregroundStyle(.green)
-                    Text("Indoor Temperature")
-                        .font(.subheadline.weight(.semibold))
-                    Spacer()
-                }
-
-                HStack(spacing: 0) {
-                    // Current temp
-                    VStack(spacing: 2) {
-                        Text(String(format: "%.1f%@", display, unit))
-                            .font(.system(.title2, design: .rounded, weight: .bold))
-                            .foregroundStyle(.white)
-                        Text("Current")
-                            .font(.caption2)
-                            .foregroundStyle(.white.opacity(0.4))
-                    }
-                    .frame(maxWidth: .infinity)
-
-                    if let low = manager.dailyLowIndoorTemp {
-                        Divider().frame(height: 30)
-                        let lowDisplay = isMetric ? (low - 32) * 5.0 / 9.0 : low
-                        VStack(spacing: 2) {
-                            Text(String(format: "%.1f%@", lowDisplay, unit))
-                                .font(.system(.callout, design: .rounded, weight: .semibold))
-                                .foregroundStyle(.cyan)
-                            Text("Low")
-                                .font(.caption2)
-                                .foregroundStyle(.white.opacity(0.4))
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-
-                    if let high = manager.dailyHighIndoorTemp {
-                        Divider().frame(height: 30)
-                        let highDisplay = isMetric ? (high - 32) * 5.0 / 9.0 : high
-                        VStack(spacing: 2) {
-                            Text(String(format: "%.1f%@", highDisplay, unit))
-                                .font(.system(.callout, design: .rounded, weight: .semibold))
-                                .foregroundStyle(.orange)
-                            Text("High")
-                                .font(.caption2)
-                                .foregroundStyle(.white.opacity(0.4))
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                }
-            }
-            .padding(16)
-            .glassEffect(.regular, in: .rect(cornerRadius: 16))
         }
     }
 
