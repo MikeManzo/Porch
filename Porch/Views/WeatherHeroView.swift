@@ -12,16 +12,17 @@ import AmbientWeather
 struct WeatherHeroView: View {
     let observation: AmbientLastData
     @EnvironmentObject var manager: WeatherManager
+    @EnvironmentObject var forecastManager: ForecastManager
 
     private var isMetric: Bool { manager.unitSystem == .metric }
 
     var body: some View {
         VStack(spacing: 4) {
-            // Weather condition icon
-            Image(systemName: weatherConditionIcon)
+            // Weather condition icon (Open-Meteo if available, else station sensors)
+            Image(systemName: currentConditionIcon)
                 .font(.system(size: 32))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(weatherConditionColor)
+                .foregroundStyle(currentConditionColor)
 
             // Primary temperature
             if let temp = observation.tempF {
@@ -63,8 +64,24 @@ struct WeatherHeroView: View {
 
     // MARK: - Weather Condition Logic
 
-    /// Derive an appropriate weather icon from sensor data
-    private var weatherConditionIcon: String {
+    /// Uses Open-Meteo current condition if available, else falls back to station sensors
+    private var currentConditionIcon: String {
+        if let today = forecastManager.dailyForecasts.first {
+            return today.icon
+        }
+        return sensorConditionIcon
+    }
+
+    private var currentConditionColor: Color {
+        if let today = forecastManager.dailyForecasts.first {
+            return today.iconColor
+        }
+        return sensorConditionColor
+    }
+
+    // MARK: - Station Sensor Fallbacks
+
+    private var sensorConditionIcon: String {
         let hasRain = (observation.hourlyRainIn ?? 0) > 0
         let hasLightning = (observation.lightningHour ?? 0) > 0
         let highUV = (observation.uv ?? 0) >= 6
@@ -79,7 +96,7 @@ struct WeatherHeroView: View {
         return "cloud.sun.fill"
     }
 
-    private var weatherConditionColor: Color {
+    private var sensorConditionColor: Color {
         let hasRain = (observation.hourlyRainIn ?? 0) > 0
         let hasLightning = (observation.lightningHour ?? 0) > 0
 

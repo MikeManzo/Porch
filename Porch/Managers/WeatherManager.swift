@@ -292,6 +292,7 @@ class WeatherManager: ObservableObject {
     private var weatherKitTimer: Timer?
     private let notificationDelegate = NotificationDelegate()
     var historyManager: HistoryManager?
+    var forecastManager: ForecastManager?
 
     /// Per-key snooze state, persisted as JSON in UserDefaults.
     private var snoozeStates: [String: SnoozeEntry] = {
@@ -490,6 +491,13 @@ class WeatherManager: ObservableObject {
             hasFetchedWeatherKitOnce = true
             Task {
                 await fetchWeatherKitAlerts()
+            }
+        }
+        // Trigger Open-Meteo forecast fetch when coordinates are available
+        if let coords = weatherData?.info.coords.coords,
+           let fm = forecastManager, fm.dailyForecasts.isEmpty {
+            Task {
+                await fm.fetchForecast(latitude: coords.lat, longitude: coords.lon)
             }
         }
     }

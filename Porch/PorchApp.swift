@@ -12,6 +12,7 @@ import AmbientWeather
 @main
 struct PorchApp: App {
     @StateObject private var weatherManager = WeatherManager()
+    @StateObject private var forecastManager = ForecastManager()
     private let appUpdater = AppUpdater()
     let modelContainer: ModelContainer
 
@@ -24,11 +25,12 @@ struct PorchApp: App {
     }
 
     var body: some Scene {
-        let _ = setupHistoryManager()
+        let _ = setupManagers()
 
         MenuBarExtra {
             MenuBarPopoverView()
                 .environmentObject(weatherManager)
+                .environmentObject(forecastManager)
                 .environmentObject(appUpdater)
                 .modelContainer(modelContainer)
         } label: {
@@ -39,6 +41,7 @@ struct PorchApp: App {
         WindowGroup("Weather Station", id: "weather-station") {
             WeatherStationView()
                 .environmentObject(weatherManager)
+                .environmentObject(forecastManager)
                 .modelContainer(modelContainer)
         }
         .defaultSize(width: 1280, height: 900)
@@ -54,9 +57,12 @@ struct PorchApp: App {
     }
 
     @discardableResult
-    private func setupHistoryManager() -> Bool {
+    private func setupManagers() -> Bool {
         if weatherManager.historyManager == nil {
             weatherManager.historyManager = HistoryManager(modelContainer: modelContainer)
+        }
+        if weatherManager.forecastManager == nil {
+            weatherManager.forecastManager = forecastManager
         }
         return true
     }

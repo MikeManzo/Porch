@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 // MARK: - Daily Forecast Model
 
@@ -25,6 +26,11 @@ struct DailyForecast: Identifiable {
     /// Human-readable condition text
     var conditionText: String {
         Self.wmoCondition(for: weatherCode)
+    }
+
+    /// Short condition label for compact layouts (3-day outlook)
+    var shortConditionText: String {
+        Self.wmoShortCondition(for: weatherCode)
     }
 
     /// Icon color based on weather type
@@ -97,6 +103,34 @@ struct DailyForecast: Identifiable {
         case 95: return "Thunderstorm"
         case 96: return "Thunderstorm with Light Hail"
         case 99: return "Thunderstorm with Heavy Hail"
+        default: return "Unknown"
+        }
+    }
+
+    static func wmoShortCondition(for code: Int) -> String {
+        switch code {
+        case 0: return "Clear"
+        case 1: return "Clear"
+        case 2: return "Partly Cloudy"
+        case 3: return "Overcast"
+        case 45, 48: return "Fog"
+        case 51, 53, 55: return "Drizzle"
+        case 56, 57: return "Frz. Drizzle"
+        case 61: return "Light Rain"
+        case 63: return "Rain"
+        case 65: return "Heavy Rain"
+        case 66, 67: return "Frz. Rain"
+        case 71: return "Light Snow"
+        case 73: return "Snow"
+        case 75: return "Heavy Snow"
+        case 77: return "Snow"
+        case 80: return "Showers"
+        case 81: return "Showers"
+        case 82: return "Heavy Showers"
+        case 85, 86: return "Snow Shwrs"
+        case 95: return "T-Storms"
+        case 96: return "T-Storms"
+        case 99: return "T-Storms"
         default: return "Unknown"
         }
     }
