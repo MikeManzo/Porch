@@ -37,11 +37,12 @@ struct WindRosePanel: View {
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
-                .frame(height: 200)
+                .frame(height: 240)
                 .frame(maxWidth: .infinity)
             } else {
                 WindRoseView(snapshots: snapshots)
-                    .frame(height: 260)
+                    .frame(width: 240, height: 240)
+                    .frame(maxWidth: .infinity)
             }
         }
         .padding(16)

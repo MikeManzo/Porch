@@ -12,6 +12,19 @@ import UserNotifications
 import WeatherKit
 import CoreLocation
 
+// MARK: - Daily Extreme Record
+
+/// A single day's high/low values for the weekly extremes history
+struct DailyExtremeRecord: Codable, Identifiable {
+    var id: String { date }
+    let date: String           // "yyyy-MM-dd"
+    var highTemp: Double?
+    var lowTemp: Double?
+    var highIndoorTemp: Double?
+    var lowIndoorTemp: Double?
+    var highWind: Double?
+}
+
 // MARK: - Snooze Types
 
 /// Describes how an alert is currently snoozed
@@ -120,6 +133,7 @@ class WeatherManager: ObservableObject {
     @Published private(set) var dailyHighIndoorTemp: Double?
     @Published private(set) var dailyLowIndoorTemp: Double?
     @Published private(set) var dailyHighWind: Double?
+    @Published private(set) var extremesHistory: [DailyExtremeRecord] = []
     private var extremesDate: String = "" // tracks which day we're on
 
     // MARK: - Low Battery
@@ -305,6 +319,12 @@ class WeatherManager: ObservableObject {
         dailyHighIndoorTemp = UserDefaults.standard.object(forKey: "dailyHighIndoorTemp") as? Double
         dailyLowIndoorTemp = UserDefaults.standard.object(forKey: "dailyLowIndoorTemp") as? Double
         dailyHighWind = UserDefaults.standard.object(forKey: "dailyHighWind") as? Double
+
+        // Restore extremes history
+        if let data = UserDefaults.standard.data(forKey: "extremesHistory"),
+           let records = try? JSONDecoder().decode([DailyExtremeRecord].self, from: data) {
+            extremesHistory = records
+        }
 
         // Set default alert thresholds if never configured
         if UserDefaults.standard.object(forKey: "highTempAlert") == nil { highTempAlert = 100 }
@@ -498,6 +518,23 @@ class WeatherManager: ObservableObject {
 
         // Reset if new day
         if today != extremesDate {
+            // Archive the previous day's extremes before resetting
+            if !extremesDate.isEmpty {
+                let record = DailyExtremeRecord(
+                    date: extremesDate,
+                    highTemp: dailyHighTemp,
+                    lowTemp: dailyLowTemp,
+                    highIndoorTemp: dailyHighIndoorTemp,
+                    lowIndoorTemp: dailyLowIndoorTemp,
+                    highWind: dailyHighWind
+                )
+                extremesHistory.append(record)
+                if extremesHistory.count > 7 {
+                    extremesHistory = Array(extremesHistory.suffix(7))
+                }
+                persistExtremesHistory()
+            }
+
             extremesDate = today
             dailyHighTemp = nil
             dailyLowTemp = nil
@@ -541,6 +578,12 @@ class WeatherManager: ObservableObject {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: Date())
+    }
+
+    private func persistExtremesHistory() {
+        if let data = try? JSONEncoder().encode(extremesHistory) {
+            UserDefaults.standard.set(data, forKey: "extremesHistory")
+        }
     }
 
     // MARK: - Notification Alerts

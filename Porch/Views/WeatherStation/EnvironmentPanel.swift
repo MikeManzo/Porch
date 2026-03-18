@@ -81,7 +81,29 @@ struct EnvironmentPanel: View {
                 Divider().opacity(0.2)
                 HStack(spacing: 16) {
                     if let pm25 = observation.pm25 {
-                        envStat(icon: "aqi.medium", label: pm25Label(pm25), value: String(format: "%.1f µg/m³", pm25), tint: pm25Color(pm25))
+                        let aqi = AQICalculator.calculate(pm25: pm25)
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "aqi.medium")
+                                    .font(.caption)
+                                    .foregroundStyle(aqi.color)
+                                Text(aqi.category)
+                                    .font(.caption)
+                                    .foregroundStyle(aqi.color)
+                            }
+                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                Text("\(aqi.value)")
+                                    .font(.system(.title3, design: .rounded, weight: .bold))
+                                    .foregroundStyle(aqi.color)
+                                Text("AQI")
+                                    .font(.caption2)
+                                    .foregroundStyle(.white.opacity(0.5))
+                            }
+                            Text(String(format: "%.1f µg/m³", pm25))
+                                .font(.caption2)
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     if let co2 = observation.co2 {
                         envStat(icon: "carbon.dioxide.cloud", label: co2Label(co2), value: "\(co2) ppm", tint: co2Color(co2))

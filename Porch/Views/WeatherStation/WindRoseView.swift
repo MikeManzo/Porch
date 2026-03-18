@@ -53,6 +53,7 @@ struct WindRoseView: View {
         let data = sectorData
         let maxCount = max(data.map(\.count).max() ?? 1, 1)
 
+        VStack(spacing: 4) {
         GeometryReader { geo in
             let size = min(geo.size.width, geo.size.height)
             let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
@@ -96,7 +97,7 @@ struct WindRoseView: View {
                     wedge.addArc(center: center, radius: innerRadius,
                                  startAngle: startAngle, endAngle: endAngle, clockwise: false)
                     wedge.addArc(center: center, radius: outerRadius,
-                                 endAngle: endAngle, startAngle: startAngle, clockwise: true)
+                                 startAngle: endAngle, endAngle: startAngle, clockwise: true)
                     wedge.closeSubpath()
 
                     let sectorColor = colorForSpeed(data[i].averageSpeed)
@@ -125,16 +126,18 @@ struct WindRoseView: View {
                 }
             }
 
-            // Legend
-            HStack(spacing: 12) {
-                legendDot(color: Color(red: 0.2, green: 0.4, blue: 0.9), label: "Calm")
-                legendDot(color: Color(red: 0.2, green: 0.7, blue: 0.4), label: "Light")
-                legendDot(color: Color(red: 0.9, green: 0.8, blue: 0.2), label: "Moderate")
-                legendDot(color: Color(red: 0.9, green: 0.2, blue: 0.2), label: "High")
-            }
-            .position(x: geo.size.width / 2, y: geo.size.height - 4)
         }
         .aspectRatio(1, contentMode: .fit)
+
+        // Legend below the chart
+        HStack(spacing: 8) {
+            legendDot(color: Color(red: 0.2, green: 0.4, blue: 0.9), label: "Calm")
+            legendDot(color: Color(red: 0.2, green: 0.7, blue: 0.4), label: "Light")
+            legendDot(color: Color(red: 0.9, green: 0.8, blue: 0.2), label: "Mod")
+            legendDot(color: Color(red: 0.9, green: 0.2, blue: 0.2), label: "High")
+        }
+        .font(.system(size: 9))
+        } // VStack
     }
 
     private func legendDot(color: Color, label: String) -> some View {

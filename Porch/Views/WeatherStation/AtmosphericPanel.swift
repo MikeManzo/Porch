@@ -12,6 +12,7 @@ import AmbientWeather
 struct AtmosphericPanel: View {
     let observation: AmbientLastData
     @EnvironmentObject var manager: WeatherManager
+    @State private var showAbsolute = false
 
     private var isMetric: Bool { manager.unitSystem == .metric }
 
@@ -26,17 +27,33 @@ struct AtmosphericPanel: View {
                 Spacer()
             }
 
-            // Pressure with trend
-            if let pressure = observation.baromRelIn {
+            // Pressure with trend and abs/rel toggle
+            if let relPressure = observation.baromRelIn {
+                let displayPressure = showAbsolute
+                    ? (observation.baromAbsIn ?? relPressure)
+                    : relPressure
+
                 HStack(spacing: 6) {
                     Image(systemName: manager.pressureTrend.icon)
                         .font(.caption)
                         .foregroundStyle(pressureTrendColor)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Pressure")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.5))
-                        Text(formatPressure(pressure))
+                        HStack(spacing: 4) {
+                            Text(showAbsolute ? "Absolute" : "Relative")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.5))
+                            if observation.baromAbsIn != nil {
+                                Button {
+                                    showAbsolute.toggle()
+                                } label: {
+                                    Image(systemName: "arrow.left.arrow.right")
+                                        .font(.caption2)
+                                        .foregroundStyle(.white.opacity(0.4))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        Text(formatPressure(displayPressure))
                             .font(.system(.title3, design: .rounded, weight: .semibold))
                             .foregroundStyle(.white)
                     }
@@ -64,17 +81,25 @@ struct AtmosphericPanel: View {
                             .foregroundStyle(.white)
                     }
                     Spacer()
-                    // Humidity bar
+                    // Humidity gradient bar
                     GeometryReader { geometry in
+                        let fillWidth = geometry.size.width * CGFloat(humidity) / 100
                         ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 3)
+                            RoundedRectangle(cornerRadius: 4)
                                 .fill(.white.opacity(0.1))
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(humidityColor(humidity))
-                                .frame(width: geometry.size.width * CGFloat(humidity) / 100)
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.blue, .green, .yellow, .orange, .red],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: fillWidth)
                         }
                     }
-                    .frame(width: 80, height: 6)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 8)
                 }
             }
 

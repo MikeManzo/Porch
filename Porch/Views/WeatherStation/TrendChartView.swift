@@ -39,11 +39,17 @@ struct TrendChartView: View {
     @EnvironmentObject var manager: WeatherManager
     @State private var timeRange: ChartTimeRange = .day
     @State private var snapshots: [WeatherSnapshot] = []
+    @State private var isExpanded = true
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            // Header with inline range picker
+        VStack(alignment: .leading, spacing: 8) {
+            // Tappable header
             HStack(spacing: 6) {
+                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.4))
+                    .frame(width: 10)
+
                 Image(systemName: icon)
                     .foregroundStyle(color)
                     .font(.subheadline)
@@ -63,15 +69,6 @@ struct TrendChartView: View {
 
                 Spacer()
 
-                // Inline time range picker
-                Picker("Range", selection: $timeRange) {
-                    ForEach(ChartTimeRange.allCases, id: \.self) { range in
-                        Text(range.rawValue).tag(range)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 120)
-
                 if let latest = primaryData.last?.value {
                     Text("\(latest, specifier: "%.1f")\(unitSuffix)")
                         .font(.system(.subheadline, design: .rounded, weight: .bold))
@@ -79,16 +76,35 @@ struct TrendChartView: View {
                         .frame(width: 80, alignment: .trailing)
                 }
             }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            }
 
-            if primaryData.isEmpty {
-                Text("Collecting data…")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .frame(height: 120)
-                    .frame(maxWidth: .infinity)
-            } else {
-                // Chart
-                Chart {
+            if isExpanded {
+                // Inline time range picker
+                HStack {
+                    Spacer()
+                    Picker("Range", selection: $timeRange) {
+                        ForEach(ChartTimeRange.allCases, id: \.self) { range in
+                            Text(range.rawValue).tag(range)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 120)
+                }
+
+                if primaryData.isEmpty {
+                    Text("Collecting data…")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .frame(height: 120)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    // Chart
+                    Chart {
                     // Primary series
                     ForEach(primaryData, id: \.timestamp) { point in
                         LineMark(
@@ -146,10 +162,11 @@ struct TrendChartView: View {
                 }
                 .chartLegend(.hidden)
                 .frame(height: 120)
-            }
+                }
+            } // isExpanded
         }
         .padding(.horizontal, 14)
-        .padding(.bottom, 10)
+        .padding(.vertical, 12)
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
         .onAppear { loadData() }
         .onChange(of: timeRange) { loadData() }

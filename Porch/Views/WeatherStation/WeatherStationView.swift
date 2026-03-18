@@ -118,14 +118,80 @@ struct WeatherStationView: View {
                                 unitSystem: manager.unitSystem,
                                 convertToMetric: { $0 * 33.8639 }
                             )
+
+                            // Wind speed trend (with gust overlay)
+                            TrendChartView(
+                                title: "Wind Speed",
+                                icon: "wind",
+                                valuePath: \.windSpeed,
+                                unitSuffix: manager.unitSystem == .metric ? " km/h" : " mph",
+                                color: .cyan,
+                                unitSystem: manager.unitSystem,
+                                convertToMetric: { $0 * 1.60934 },
+                                secondary: SecondarySeries(
+                                    label: "Gust",
+                                    valuePath: \.windGust,
+                                    color: .orange,
+                                    convertToMetric: { $0 * 1.60934 }
+                                )
+                            )
+
+                            // Solar radiation & UV trend
+                            if data.observation.solarRadiation != nil {
+                                TrendChartView(
+                                    title: "Solar & UV",
+                                    icon: "sun.max.fill",
+                                    valuePath: \.solarRadiation,
+                                    unitSuffix: " W/m²",
+                                    color: .yellow,
+                                    unitSystem: manager.unitSystem,
+                                    secondary: data.observation.uv != nil
+                                        ? SecondarySeries(
+                                            label: "UV",
+                                            valuePath: \.uvDouble,
+                                            color: .purple
+                                        ) : nil
+                                )
+                            }
+
+                            // Rain accumulation trend
+                            if data.observation.dailyRainIn != nil {
+                                TrendChartView(
+                                    title: "Rain (Daily)",
+                                    icon: "cloud.rain",
+                                    valuePath: \.dailyRain,
+                                    unitSuffix: manager.unitSystem == .metric ? " mm" : "\"",
+                                    color: .blue,
+                                    unitSystem: manager.unitSystem,
+                                    convertToMetric: { $0 * 25.4 }
+                                )
+                            }
+
+                            // PM2.5 air quality trend
+                            if data.observation.pm25 != nil {
+                                TrendChartView(
+                                    title: "PM2.5 Air Quality",
+                                    icon: "aqi.medium",
+                                    valuePath: \.pm25,
+                                    unitSuffix: " µg/m³",
+                                    color: .green,
+                                    unitSystem: manager.unitSystem
+                                )
+                            }
+
+                            // Weekly extremes history
+                            WeeklyExtremesPanel()
                         }
                         .frame(maxWidth: .infinity)
 
                         // Right column (fixed width)
                         VStack(spacing: 16) {
                             WindPanel(observation: data.observation)
+                            WindRosePanel()
                             IndoorPanel(observation: data.observation)
                             EnvironmentPanel(observation: data.observation)
+                            LeakDetectionPanel(observation: data.observation)
+                            RelayStatusPanel(observation: data.observation)
                             GardenPanel(observation: data.observation)
                         }
                         .frame(width: 360)
