@@ -29,6 +29,7 @@ struct PorchApp: App {
         MenuBarExtra {
             MenuBarPopoverView()
                 .environmentObject(weatherManager)
+                .environmentObject(appUpdater)
                 .modelContainer(modelContainer)
         } label: {
             MenuBarLabel(manager: weatherManager)

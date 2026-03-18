@@ -5,6 +5,7 @@
 //  Created by Mike Manzo on 3/17/26.
 //
 
+import AppKit
 import Sparkle
 import Combine
 import UserNotifications

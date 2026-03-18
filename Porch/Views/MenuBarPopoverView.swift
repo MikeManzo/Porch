@@ -10,6 +10,7 @@ import AmbientWeather
 
 struct MenuBarPopoverView: View {
     @EnvironmentObject var manager: WeatherManager
+    @EnvironmentObject var appUpdater: AppUpdater
     @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
     @State private var showAllSensors = false
@@ -177,6 +178,20 @@ struct MenuBarPopoverView: View {
             }
             .buttonStyle(.borderless)
             .disabled(manager.weatherData == nil)
+
+            if appUpdater.updateAvailable {
+                Spacer()
+
+                Button {
+                    NSApp.keyWindow?.close()
+                    appUpdater.checkForUpdates()
+                    NSApp.activate(ignoringOtherApps: true)
+                } label: {
+                    Label("Update", systemImage: "arrow.down.circle.fill")
+                        .foregroundStyle(.green)
+                }
+                .buttonStyle(.borderless)
+            }
 
             Spacer()
 
