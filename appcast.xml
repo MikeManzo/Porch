@@ -5,7 +5,7 @@
         <item>
             <title>0.6</title>
             <pubDate>Wed, 18 Mar 2026 12:00:09 -0400</pubDate>
-            <sparkle:version>1</sparkle:version>
+            <sparkle:version>2</sparkle:version>
             <sparkle:shortVersionString>0.6</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.4</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/MikeManzo/Porch/releases/download/v0.6/Porch.dmg" length="3833608" type="application/octet-stream" sparkle:edSignature="hujq9OqQM1TXOpZ7R+dYdnyJL3msXkWqNnlxYavUAaovYeaktI2BAkvCJT5n2eEQHJF8Tabd1U0aS27vljr4BA=="/>
