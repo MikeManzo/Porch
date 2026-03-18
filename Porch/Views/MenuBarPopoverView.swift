@@ -155,6 +155,7 @@ struct MenuBarPopoverView: View {
             Button {
                 NSApp.keyWindow?.close()
                 openSettings()
+                NSApp.activate(ignoringOtherApps: true)
             } label: {
                 Label("Settings", systemImage: "gear")
             }
@@ -167,10 +168,10 @@ struct MenuBarPopoverView: View {
                 // Focus existing station window or open a new one
                 if let existing = NSApp.windows.first(where: { $0.title == "Weather Station" }) {
                     existing.makeKeyAndOrderFront(nil)
-                    NSApp.activate(ignoringOtherApps: true)
                 } else {
                     openWindow(id: "weather-station")
                 }
+                NSApp.activate(ignoringOtherApps: true)
             } label: {
                 Label("Station", systemImage: "gauge.with.dots.needle.67percent")
             }
