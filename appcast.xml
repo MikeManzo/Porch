@@ -4,11 +4,11 @@
         <title>Porch</title>
         <item>
             <title>0.5.1</title>
-            <pubDate>Tue, 17 Mar 2026 19:55:55 -0400</pubDate>
+            <pubDate>Tue, 17 Mar 2026 20:01:41 -0400</pubDate>
             <sparkle:version>2</sparkle:version>
             <sparkle:shortVersionString>0.5.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.4</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/MikeManzo/Porch/releases/download/v0.5.1/Porch.dmg" length="3687486" type="application/octet-stream" sparkle:edSignature="n04VN2oP5G1IVJjbOcYDW822yumbjEQ/NeAhqSTIMF1MI7dP4fEtVB6H3TuFBuwqVEzSYIgrAxg5HtdzcrrYCw=="/>
+            <enclosure url="https://github.com/MikeManzo/Porch/releases/download/v0.5.1/Porch.dmg" length="3687778" type="application/octet-stream" sparkle:edSignature="XYwYShwWiVtMvUxvhNEx1Yhxk4AftzHfUMxW/BCanUJNXfBnkDQOmT9B2EfZoj90jKw0h4OL+S5KepFn4kqXCQ=="/>
         </item>
     </channel>
 </rss>
