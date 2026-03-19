@@ -379,6 +379,10 @@ class WeatherManager: ObservableObject {
         guard weatherData != nil else {
             return "cloud.fill"
         }
+        // Use Open-Meteo current condition icon (day/night aware) if available
+        if let current = forecastManager?.currentWeather {
+            return current.icon
+        }
         let category = AmbientLastData.propertyCategories[selectedSensorKey] ?? .unknown
         return category.iconName
     }

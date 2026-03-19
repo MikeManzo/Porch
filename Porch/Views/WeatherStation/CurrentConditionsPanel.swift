@@ -164,18 +164,18 @@ struct CurrentConditionsPanel: View {
         return formatter.string(from: date)
     }
 
-    /// Icon for the 48pt hero — uses Open-Meteo current condition if available, else station sensors
+    /// Icon for the 48pt hero — uses Open-Meteo current conditions if available, else station sensors
     private var currentConditionIcon: String {
-        if let today = forecastManager.dailyForecasts.first {
-            return today.icon
+        if let current = forecastManager.currentWeather {
+            return current.icon
         }
         return sensorConditionIcon
     }
 
     /// Color for the 48pt hero icon
     private var currentConditionColor: Color {
-        if let today = forecastManager.dailyForecasts.first {
-            return today.iconColor
+        if let current = forecastManager.currentWeather {
+            return current.iconColor
         }
         return sensorConditionColor
     }

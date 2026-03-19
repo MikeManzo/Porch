@@ -64,17 +64,17 @@ struct WeatherHeroView: View {
 
     // MARK: - Weather Condition Logic
 
-    /// Uses Open-Meteo current condition if available, else falls back to station sensors
+    /// Uses Open-Meteo current conditions if available, else falls back to station sensors
     private var currentConditionIcon: String {
-        if let today = forecastManager.dailyForecasts.first {
-            return today.icon
+        if let current = forecastManager.currentWeather {
+            return current.icon
         }
         return sensorConditionIcon
     }
 
     private var currentConditionColor: Color {
-        if let today = forecastManager.dailyForecasts.first {
-            return today.iconColor
+        if let current = forecastManager.currentWeather {
+            return current.iconColor
         }
         return sensorConditionColor
     }

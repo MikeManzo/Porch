@@ -34,8 +34,10 @@ struct DailyForecast: Identifiable {
     }
 
     /// Icon color based on weather type
-    var iconColor: Color {
-        switch weatherCode {
+    var iconColor: Color { Self.wmoIconColor(for: weatherCode) }
+
+    static func wmoIconColor(for code: Int) -> Color {
+        switch code {
         case 0: return .orange
         case 1, 2: return .orange
         case 3: return .gray
@@ -136,12 +138,53 @@ struct DailyForecast: Identifiable {
     }
 }
 
+// MARK: - Current Weather Model
+
+struct CurrentWeather {
+    let weatherCode: Int
+    let isDay: Bool
+    let time: Date
+
+    /// SF Symbol for the WMO weather code, adjusted for day/night
+    var icon: String {
+        if isDay {
+            return DailyForecast.wmoIcon(for: weatherCode)
+        }
+        // Night variants: swap sun symbols for moon symbols
+        switch weatherCode {
+        case 0: return "moon.stars.fill"
+        case 1: return "moon.fill"
+        case 2: return "cloud.moon.fill"
+        default: return DailyForecast.wmoIcon(for: weatherCode)
+        }
+    }
+
+    /// Human-readable condition text
+    var conditionText: String {
+        if !isDay && weatherCode == 0 { return "Clear Night" }
+        return DailyForecast.wmoCondition(for: weatherCode)
+    }
+
+    /// Icon color based on weather type, adjusted for night
+    var iconColor: Color {
+        if !isDay {
+            switch weatherCode {
+            case 0, 1: return .indigo
+            case 2: return .indigo
+            default: return DailyForecast.wmoIconColor(for: weatherCode)
+            }
+        }
+        return DailyForecast.wmoIconColor(for: weatherCode)
+    }
+}
+
 // MARK: - Forecast Manager
 
 @MainActor
 class ForecastManager: ObservableObject {
 
     @Published private(set) var dailyForecasts: [DailyForecast] = []
+    @Published private(set) var currentWeather: CurrentWeather?
     @Published private(set) var lastFetchDate: Date?
 
     private var refreshTimer: Timer?
@@ -161,6 +204,7 @@ class ForecastManager: ObservableObject {
         let urlString = "https://api.open-meteo.com/v1/forecast"
             + "?latitude=\(latitude)"
             + "&longitude=\(longitude)"
+            + "&current=weather_code,is_day"
             + "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max"
             + "&temperature_unit=fahrenheit"
             + "&timezone=auto"
@@ -173,6 +217,18 @@ class ForecastManager: ObservableObject {
             let response = try JSONDecoder().decode(OpenMeteoResponse.self, from: data)
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
+
+            // Parse current conditions
+            if let currentData = response.current {
+                let isoFormatter = ISO8601DateFormatter()
+                isoFormatter.formatOptions = [.withFullDate, .withTime, .withDashSeparatorInDate, .withColonSeparatorInTime]
+                let currentTime = isoFormatter.date(from: currentData.time) ?? Date()
+                currentWeather = CurrentWeather(
+                    weatherCode: currentData.weather_code,
+                    isDay: currentData.is_day == 1,
+                    time: currentTime
+                )
+            }
 
             var forecasts: [DailyForecast] = []
             let count = response.daily.time.count
@@ -224,7 +280,14 @@ class ForecastManager: ObservableObject {
 // MARK: - Open-Meteo JSON Response
 
 private struct OpenMeteoResponse: Decodable {
+    let current: CurrentData?
     let daily: DailyData
+
+    struct CurrentData: Decodable {
+        let time: String
+        let weather_code: Int
+        let is_day: Int  // 1 = day, 0 = night
+    }
 
     struct DailyData: Decodable {
         let time: [String]
