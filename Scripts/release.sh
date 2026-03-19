@@ -94,6 +94,16 @@ read -p "Continue? (y/n) " -n 1 -r
 echo ""
 [[ $REPLY =~ ^[Yy]$ ]] || exit 0
 
+# ── Auto-increment build number ─────────────────────────────
+CURRENT_BUILD=$(grep -m1 'CURRENT_PROJECT_VERSION' "$PROJECT/project.pbxproj" | sed 's/[^0-9]//g')
+NEW_BUILD=$((CURRENT_BUILD + 1))
+info "Bumping build number: $CURRENT_BUILD → $NEW_BUILD"
+sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $NEW_BUILD/" "$PROJECT/project.pbxproj"
+
+# ── Set marketing version ───────────────────────────────────
+info "Setting MARKETING_VERSION = $VERSION"
+sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = $VERSION/" "$PROJECT/project.pbxproj"
+
 # ── Prepare work directory ───────────────────────────────────
 info "Preparing work directory..."
 rm -rf "$WORK_DIR"
