@@ -196,8 +196,8 @@ class ForecastManager: ObservableObject {
         currentLatitude = latitude
         currentLongitude = longitude
 
-        // Throttle: don't re-fetch if last fetch was less than 1 hour ago
-        if let last = lastFetchDate, Date().timeIntervalSince(last) < 3600 {
+        // Throttle: don't re-fetch if last fetch was less than 10 minutes ago
+        if let last = lastFetchDate, Date().timeIntervalSince(last) < 600 {
             return
         }
 
@@ -256,10 +256,10 @@ class ForecastManager: ObservableObject {
         }
     }
 
-    /// Schedule periodic refresh every 6 hours
+    /// Schedule periodic refresh every 10 minutes
     private func startRefreshTimer() {
         refreshTimer?.invalidate()
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 21600, repeats: true) { [weak self] _ in
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self,
                       let lat = self.currentLatitude,
