@@ -40,6 +40,7 @@ struct TrendChartView: View {
     @State private var timeRange: ChartTimeRange = .day
     @State private var snapshots: [WeatherSnapshot] = []
     @State private var isExpanded = true
+    @State private var selectedDate: Date?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -69,7 +70,13 @@ struct TrendChartView: View {
 
                 Spacer()
 
-                if let latest = primaryData.last?.value {
+                if let selected = selectedPoint {
+                    Text("\(selected.value, specifier: "%.1f")\(unitSuffix)")
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
+                        .foregroundStyle(color)
+                        .frame(width: 80, alignment: .trailing)
+                        .contentTransition(.numericText())
+                } else if let latest = primaryData.last?.value {
                     Text("\(latest, specifier: "%.1f")\(unitSuffix)")
                         .font(.system(.subheadline, design: .rounded, weight: .bold))
                         .foregroundStyle(color)
@@ -143,6 +150,20 @@ struct TrendChartView: View {
                             .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
                         }
                     }
+
+                    // Scrub indicator
+                    if let selected = selectedPoint {
+                        RuleMark(x: .value("Selected", selected.timestamp))
+                            .foregroundStyle(.white.opacity(0.4))
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+
+                        PointMark(
+                            x: .value("Selected", selected.timestamp),
+                            y: .value(title, selected.value)
+                        )
+                        .foregroundStyle(color)
+                        .symbolSize(36)
+                    }
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic(desiredCount: 6)) {
@@ -161,6 +182,33 @@ struct TrendChartView: View {
                     }
                 }
                 .chartLegend(.hidden)
+                .chartXSelection(value: $selectedDate)
+                .chartYScale(domain: yDomain)
+                .chartPlotStyle { plotArea in
+                    plotArea.clipped()
+                }
+                .chartOverlay { proxy in
+                    GeometryReader { geometry in
+                        if let selected = selectedPoint,
+                           let anchor = proxy.plotFrame,
+                           let xPos = proxy.position(forX: selected.timestamp) {
+                            let plotFrame = geometry[anchor]
+                            let xClamped = min(max(xPos + plotFrame.origin.x, plotFrame.origin.x + 40), plotFrame.origin.x + plotFrame.width - 40)
+                            VStack(spacing: 2) {
+                                Text("\(selected.value, specifier: "%.1f")\(unitSuffix)")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(color)
+                                Text(selected.timestamp, format: .dateTime.hour().minute())
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(.ultraThinMaterial, in: .rect(cornerRadius: 6))
+                            .position(x: xClamped, y: plotFrame.origin.y - 16)
+                        }
+                    }
+                }
                 .frame(height: 120)
                 }
             } // isExpanded
@@ -170,6 +218,28 @@ struct TrendChartView: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
         .onAppear { loadData() }
         .onChange(of: timeRange) { loadData() }
+    }
+
+    // MARK: - Selection
+
+    /// The nearest primary data point to the scrub position
+    private var selectedPoint: (timestamp: Date, value: Double)? {
+        guard let selectedDate else { return nil }
+        return primaryData.min(by: {
+            abs($0.timestamp.timeIntervalSince(selectedDate)) < abs($1.timestamp.timeIntervalSince(selectedDate))
+        })
+    }
+
+    // MARK: - Y-Axis Domain
+
+    /// Fixed Y domain from data so selection marks don't shift the scale
+    private var yDomain: ClosedRange<Double> {
+        let allValues = primaryData.map(\.value) + secondaryData.map(\.value)
+        guard let lo = allValues.min(), let hi = allValues.max() else {
+            return 0...1
+        }
+        let padding = max((hi - lo) * 0.05, 0.5)
+        return (lo - padding)...(hi + padding)
     }
 
     // MARK: - X-Axis Format
