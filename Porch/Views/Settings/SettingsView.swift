@@ -87,7 +87,7 @@ struct SettingsView: View {
         }
         .toolbar(.hidden)
         .preferredColorScheme(.dark)
-        .frame(width: 640, height: 460)
+        .frame(width: 580, height: 600)
     }
 
     // MARK: - Detail Content

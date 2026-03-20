@@ -58,15 +58,15 @@ struct WeatherStationView: View {
     @ViewBuilder
     private func dashboardContent(data: AmbientWeatherData) -> some View {
         ScrollView {
-            GlassEffectContainer(spacing: 16) {
-                VStack(spacing: 16) {
-                    // Top bar
-                    topBar(data: data)
+            GlassEffectContainer {
+            VStack(spacing: 16) {
+                // Top bar
+                topBar(data: data)
 
-                    // Main two-column layout
-                    HStack(alignment: .top, spacing: 16) {
-                        // Left column (flexible width)
-                        VStack(spacing: 16) {
+                // Main two-column layout
+                HStack(alignment: .top, spacing: 16) {
+                    // Left column (flexible width)
+                    VStack(spacing: 16) {
                             CurrentConditionsPanel(observation: data.observation)
 
                             HStack(alignment: .top, spacing: 16) {
@@ -182,19 +182,19 @@ struct WeatherStationView: View {
                             // Weekly extremes history
                             WeeklyExtremesPanel()
                         }
-                        .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity)
 
-                        // Right column (fixed width)
-                        VStack(spacing: 16) {
-                            WindPanel(observation: data.observation)
-                            WindRosePanel()
-                            IndoorPanel(observation: data.observation)
-                            EnvironmentPanel(observation: data.observation)
-                            LeakDetectionPanel(observation: data.observation)
-                            RelayStatusPanel(observation: data.observation)
-                            GardenPanel(observation: data.observation)
-                        }
-                        .frame(width: 360)
+                    // Right column (fixed width)
+                    VStack(spacing: 16) {
+                        WindPanel(observation: data.observation)
+                        WindRosePanel()
+                        IndoorPanel(observation: data.observation)
+                        EnvironmentPanel(observation: data.observation)
+                        LeakDetectionPanel(observation: data.observation)
+                        RelayStatusPanel(observation: data.observation)
+                        GardenPanel(observation: data.observation)
+                    }
+                    .frame(width: 360)
                     }
                 }
                 .padding(24)
