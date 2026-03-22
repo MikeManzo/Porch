@@ -17,9 +17,17 @@ import MapKit
 // MARK: - Data Source Mode
 
 /// Which weather data source to use
-enum DataSourceMode: String, CaseIterable {
-    case ambientCloud = "Ambient Weather"
+enum DataSourceMode: String {
+    case auto = "Auto (Local Priority)"
     case ecowittLocal = "Ecowitt (Local)"
+    case ambientCloud = "Ambient Weather"
+}
+
+/// Which concrete data source is currently serving data (relevant in auto mode)
+enum ActiveSource: String {
+    case ambient = "Cloud"
+    case ecowitt = "Local"
+    case none = "None"
 }
 
 // MARK: - Daily Extreme Record
@@ -100,6 +108,7 @@ class WeatherManager: ObservableObject {
     @Published private(set) var connectionStatus: SocketStatus = .disconnected
     @Published private(set) var weatherData: AmbientWeatherData?
     @Published private(set) var connectionError: Error?
+    @Published private(set) var activeDataSource: ActiveSource = .none
 
     // MARK: - Multi-Station Support
 
@@ -196,7 +205,7 @@ class WeatherManager: ObservableObject {
     }
     // MARK: - Data Source
 
-    @Published var dataSourceMode: DataSourceMode = DataSourceMode(rawValue: UserDefaults.standard.string(forKey: "dataSourceMode") ?? "") ?? .ambientCloud {
+    @Published var dataSourceMode: DataSourceMode = DataSourceMode(rawValue: UserDefaults.standard.string(forKey: "dataSourceMode") ?? "") ?? .auto {
         didSet { UserDefaults.standard.set(dataSourceMode.rawValue, forKey: "dataSourceMode") }
     }
     @Published var ecowittHost: String = UserDefaults.standard.string(forKey: "ecowittHost") ?? "" {
@@ -324,6 +333,8 @@ class WeatherManager: ObservableObject {
     private var ecowittClient: EcowittClient?
     private var reverseGeocodedLocation: String = ""
     private var cancellables = Set<AnyCancellable>()
+    private var sourceCancellables = Set<AnyCancellable>()
+    private var ecowittProbeTimer: Timer?
     private var lastAlertTimes: [String: Date] = [:]
     private var weatherKitTimer: Timer?
     private let notificationDelegate = NotificationDelegate()
@@ -386,6 +397,8 @@ class WeatherManager: ObservableObject {
             shouldAutoConnect = !applicationKey.isEmpty && !apiKeysRaw.isEmpty
         case .ecowittLocal:
             shouldAutoConnect = !ecowittHost.isEmpty
+        case .auto:
+            shouldAutoConnect = !ecowittHost.isEmpty || (!applicationKey.isEmpty && !apiKeysRaw.isEmpty)
         }
         if shouldAutoConnect {
             DispatchQueue.main.async { [weak self] in
@@ -442,7 +455,9 @@ class WeatherManager: ObservableObject {
 
     /// Station location, if connected
     var stationLocation: String {
-        if dataSourceMode == .ecowittLocal, !reverseGeocodedLocation.isEmpty {
+        let usingEcowitt = dataSourceMode == .ecowittLocal ||
+                            (dataSourceMode == .auto && activeDataSource == .ecowitt)
+        if usingEcowitt, !reverseGeocodedLocation.isEmpty {
             return reverseGeocodedLocation
         }
         return weatherData?.info.coords.location ?? ""
@@ -451,20 +466,26 @@ class WeatherManager: ObservableObject {
     /// Coordinates for weather services (forecast, alerts).
     /// Uses station coords for Ambient, manual coords for Ecowitt.
     var effectiveCoordinates: (lat: Double, lon: Double)? {
-        switch dataSourceMode {
-        case .ambientCloud:
-            guard let coords = weatherData?.info.coords.coords else { return nil }
-            return (coords.lat, coords.lon)
-        case .ecowittLocal:
+        let usingEcowitt = dataSourceMode == .ecowittLocal ||
+                            (dataSourceMode == .auto && activeDataSource == .ecowitt)
+        if usingEcowitt {
             guard let lat = Double(manualLatitude),
                   let lon = Double(manualLongitude) else { return nil }
             return (lat, lon)
+        } else {
+            guard let coords = weatherData?.info.coords.coords else { return nil }
+            return (coords.lat, coords.lon)
         }
     }
 
     /// Whether the Ecowitt data source is configured
     var isEcowittConfigured: Bool {
         !ecowittHost.isEmpty
+    }
+
+    /// Whether both sources are configured, enabling Auto mode
+    var isAutoAvailable: Bool {
+        isEcowittConfigured && isConfigured
     }
 
     // MARK: - Connection Management
@@ -475,9 +496,13 @@ class WeatherManager: ObservableObject {
 
         switch dataSourceMode {
         case .ambientCloud:
+            activeDataSource = .ambient
             connectAmbient()
         case .ecowittLocal:
+            activeDataSource = .ecowitt
             connectEcowitt()
+        case .auto:
+            connectAuto()
         }
 
         // Start WeatherKit polling (15-minute interval)
@@ -495,7 +520,7 @@ class WeatherManager: ObservableObject {
             .sink { [weak self] status in
                 self?.connectionStatus = status
             }
-            .store(in: &cancellables)
+            .store(in: &sourceCancellables)
 
         ws.$weatherData
             .receive(on: DispatchQueue.main)
@@ -516,14 +541,14 @@ class WeatherManager: ObservableObject {
                     self.processNewObservation(data.observation)
                 }
             }
-            .store(in: &cancellables)
+            .store(in: &sourceCancellables)
 
         ws.$connectionError
             .receive(on: DispatchQueue.main)
             .sink { [weak self] error in
                 self?.connectionError = error
             }
-            .store(in: &cancellables)
+            .store(in: &sourceCancellables)
 
         ws.connectStations(apiKeys: apiKeys)
     }
@@ -538,13 +563,22 @@ class WeatherManager: ObservableObject {
         client.$connectionStatus
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
+                guard let self else { return }
                 switch status {
-                case .connected: self?.connectionStatus = .connected
-                case .connecting: self?.connectionStatus = .connecting
-                case .disconnected: self?.connectionStatus = .disconnected
+                case .connected: self.connectionStatus = .connected
+                case .connecting: self.connectionStatus = .connecting
+                case .disconnected:
+                    // In auto mode, fail over to Ambient — but only if we had an established
+                    // connection that was lost, not during the transient .disconnected state
+                    // that EcowittClient publishes when connect() internally calls disconnect().
+                    if self.connectionStatus == .connected && self.dataSourceMode == .auto && self.activeDataSource == .ecowitt && self.isConfigured {
+                        self.switchAutoSource(to: .ambient)
+                    } else if self.dataSourceMode != .auto || self.activeDataSource != .ecowitt {
+                        self.connectionStatus = .disconnected
+                    }
                 }
             }
-            .store(in: &cancellables)
+            .store(in: &sourceCancellables)
 
         // Map Ecowitt errors
         client.$connectionError
@@ -552,7 +586,7 @@ class WeatherManager: ObservableObject {
             .sink { [weak self] error in
                 self?.connectionError = error
             }
-            .store(in: &cancellables)
+            .store(in: &sourceCancellables)
 
         // Convert each Ecowitt update to full AmbientWeatherData and process
         client.$liveData
@@ -579,7 +613,7 @@ class WeatherManager: ObservableObject {
                     self.processNewObservation(data.observation)
                 }
             }
-            .store(in: &cancellables)
+            .store(in: &sourceCancellables)
 
         client.connect(host: ecowittHost, port: ecowittPort)
 
@@ -600,17 +634,134 @@ class WeatherManager: ObservableObject {
         }
     }
 
+    // MARK: - Auto Mode
+
+    /// Auto mode: probe the Ecowitt gateway first, fall back to Ambient cloud.
+    private func connectAuto() {
+        // If only one source is configured, just use that one
+        guard isEcowittConfigured && isConfigured else {
+            if isEcowittConfigured {
+                activeDataSource = .ecowitt
+                connectEcowitt()
+            } else if isConfigured {
+                activeDataSource = .ambient
+                connectAmbient()
+            }
+            return
+        }
+
+        connectionStatus = .connecting
+        activeDataSource = .none
+
+        Task { [weak self] in
+            let reachable = await self?.probeEcowittGateway() ?? false
+            guard let self, self.dataSourceMode == .auto else { return }
+
+            if reachable {
+                self.activeDataSource = .ecowitt
+                self.connectEcowitt()
+            } else {
+                self.activeDataSource = .ambient
+                self.connectAmbient()
+                self.startEcowittProbeTimer()
+            }
+        }
+    }
+
+    /// Quick HTTP probe to check if the Ecowitt gateway is reachable.
+    private func probeEcowittGateway() async -> Bool {
+        guard let url = URL(string: "http://\(ecowittHost):\(ecowittPort)/get_livedata_info") else {
+            return false
+        }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 3
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                return false
+            }
+            // Validate it looks like Ecowitt JSON
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  json["common_list"] != nil || json["wh25"] != nil else {
+                return false
+            }
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Start polling the Ecowitt gateway every 60 seconds to detect when it comes back.
+    private func startEcowittProbeTimer() {
+        ecowittProbeTimer?.invalidate()
+        ecowittProbeTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self,
+                      self.dataSourceMode == .auto,
+                      self.activeDataSource == .ambient else {
+                    self?.ecowittProbeTimer?.invalidate()
+                    self?.ecowittProbeTimer = nil
+                    return
+                }
+
+                let reachable = await self.probeEcowittGateway()
+                if reachable {
+                    self.switchAutoSource(to: .ecowitt)
+                }
+            }
+        }
+    }
+
+    /// Tear down the current data source and connect to the other one (auto mode only).
+    private func switchAutoSource(to newSource: ActiveSource) {
+        tearDownCurrentSource()
+        activeDataSource = newSource
+
+        switch newSource {
+        case .ecowitt:
+            ecowittProbeTimer?.invalidate()
+            ecowittProbeTimer = nil
+            connectEcowitt()
+        case .ambient:
+            connectAmbient()
+            startEcowittProbeTimer()
+        case .none:
+            break
+        }
+    }
+
+    /// Tear down only the active data source connection without touching
+    /// the WeatherKit timer, probe timer, or overall connection state.
+    private func tearDownCurrentSource() {
+        sourceCancellables.removeAll()
+        socket?.disconnectStations()
+        socket = nil
+        ecowittClient?.disconnect()
+        ecowittClient = nil
+        weatherData = nil
+        connectionError = nil
+        allStations.removeAll()
+        selectedStationID = nil
+        reverseGeocodedLocation = ""
+    }
+
     func disconnect() {
         weatherKitTimer?.invalidate()
         weatherKitTimer = nil
+        ecowittProbeTimer?.invalidate()
+        ecowittProbeTimer = nil
         activeWeatherAlerts = []
         cancellables.removeAll()
+        sourceCancellables.removeAll()
         socket?.disconnectStations()
         socket = nil
         ecowittClient?.disconnect()
         ecowittClient = nil
         forecastManager?.reset()
         connectionStatus = .disconnected
+        activeDataSource = .none
         weatherData = nil
         connectionError = nil
         allStations.removeAll()
@@ -625,6 +776,8 @@ class WeatherManager: ObservableObject {
             if isConfigured { connect() }
         case .ecowittLocal:
             if isEcowittConfigured { connect() }
+        case .auto:
+            if isEcowittConfigured || isConfigured { connect() }
         }
     }
 

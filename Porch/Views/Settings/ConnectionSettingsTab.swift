@@ -63,6 +63,9 @@ struct ConnectionSettingsTab: View {
     @State private var latitudeInput: String = ""
     @State private var longitudeInput: String = ""
 
+    // Manual source preference (when Auto is off)
+    @State private var manualSource: DataSourceMode = .ecowittLocal
+
     // Network scanner
     @StateObject private var scanner = EcowittScanner()
 
@@ -71,27 +74,41 @@ struct ConnectionSettingsTab: View {
 
     var body: some View {
         Form {
-            // MARK: - Data Source Picker
+            // MARK: - Data Source
 
             Section("Data Source") {
-                Picker("Source", selection: $manager.dataSourceMode) {
-                    ForEach(DataSourceMode.allCases, id: \.self) { mode in
-                        Text(mode.rawValue).tag(mode)
-                    }
+                Picker("Source", selection: $manualSource) {
+                    Text("Ecowitt (Local)").tag(DataSourceMode.ecowittLocal)
+                    Text("Ambient Weather").tag(DataSourceMode.ambientCloud)
                 }
                 .pickerStyle(.segmented)
-                .onChange(of: manager.dataSourceMode) {
-                    manager.disconnect()
+                .disabled(manager.dataSourceMode == .auto)
+                .onChange(of: manualSource) {
+                    if manager.dataSourceMode != .auto {
+                        manager.dataSourceMode = manualSource
+                    }
                 }
+
+                Toggle(isOn: Binding(
+                    get: { manager.dataSourceMode == .auto },
+                    set: { isAuto in
+                        manager.dataSourceMode = isAuto ? .auto : manualSource
+                    }
+                )) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Auto (Local Priority)")
+                        Text("Use local gateway when home, cloud API when away")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .disabled(!manager.isAutoAvailable)
             }
 
-            // MARK: - Source-Specific Configuration
+            // MARK: - Source Configuration
 
-            if manager.dataSourceMode == .ambientCloud {
-                ambientSection
-            } else {
-                ecowittSection
-            }
+            ecowittSection
+            ambientSection
 
             // MARK: - Connection Controls (shared)
 
@@ -99,8 +116,8 @@ struct ConnectionSettingsTab: View {
 
             // MARK: - Discovered Station Info
 
-            if manager.weatherData != nil && manager.dataSourceMode == .ambientCloud {
-                Section("Discovered Station") {
+            if manager.weatherData != nil {
+                Section("Connected Station") {
                     LabeledContent("Name", value: manager.stationName)
                     LabeledContent("Location", value: manager.stationLocation)
                     LabeledContent("Station ID", value: manager.weatherData?.stationID ?? "--")
@@ -109,6 +126,10 @@ struct ConnectionSettingsTab: View {
                         .flatMap(\.1)
                         .count
                     LabeledContent("Active Sensors", value: "\(sensorCount)")
+
+                    if manager.dataSourceMode == .auto {
+                        LabeledContent("Source", value: "via \(manager.activeDataSource.rawValue)")
+                    }
                 }
             }
         }
@@ -121,6 +142,9 @@ struct ConnectionSettingsTab: View {
             ecowittStationNameInput = manager.ecowittStationName
             latitudeInput = manager.manualLatitude
             longitudeInput = manager.manualLongitude
+            if manager.dataSourceMode != .auto {
+                manualSource = manager.dataSourceMode
+            }
         }
     }
 
@@ -301,8 +325,12 @@ struct ConnectionSettingsTab: View {
                     manager.connect()
                 } label: {
                     Label(
-                        manager.dataSourceMode == .ambientCloud ? "Search for Stations" : "Connect to Gateway",
-                        systemImage: manager.dataSourceMode == .ambientCloud ? "antenna.radiowaves.left.and.right" : "wifi.router"
+                        manager.dataSourceMode == .ambientCloud ? "Search for Stations" :
+                        manager.dataSourceMode == .ecowittLocal ? "Connect to Gateway" :
+                        "Auto Connect",
+                        systemImage: manager.dataSourceMode == .ambientCloud ? "antenna.radiowaves.left.and.right" :
+                        manager.dataSourceMode == .ecowittLocal ? "wifi.router" :
+                        "arrow.triangle.2.circlepath"
                     )
                 }
                 .buttonStyle(.glass)
@@ -327,6 +355,12 @@ struct ConnectionSettingsTab: View {
                     Text(manager.connectionStatus.rawValue.capitalized)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
+
+                    if manager.dataSourceMode == .auto && manager.connectionStatus == .connected {
+                        Text("via \(manager.activeDataSource.rawValue)")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
             }
 
@@ -346,22 +380,20 @@ struct ConnectionSettingsTab: View {
             return appKeyInput.isEmpty || apiKeyInput.isEmpty
         case .ecowittLocal:
             return ecowittHostInput.isEmpty
+        case .auto:
+            return ecowittHostInput.isEmpty || appKeyInput.isEmpty || apiKeyInput.isEmpty
         }
     }
 
     /// Push local state into the manager before connecting
     private func applyInputs() {
-        switch manager.dataSourceMode {
-        case .ambientCloud:
-            manager.applicationKey = appKeyInput
-            manager.apiKeysRaw = apiKeyInput
-        case .ecowittLocal:
-            manager.ecowittHost = ecowittHostInput
-            manager.ecowittPort = Int(ecowittPortInput) ?? 80
-            manager.ecowittStationName = ecowittStationNameInput
-            manager.manualLatitude = latitudeInput
-            manager.manualLongitude = longitudeInput
-        }
+        manager.applicationKey = appKeyInput
+        manager.apiKeysRaw = apiKeyInput
+        manager.ecowittHost = ecowittHostInput
+        manager.ecowittPort = Int(ecowittPortInput) ?? 80
+        manager.ecowittStationName = ecowittStationNameInput
+        manager.manualLatitude = latitudeInput
+        manager.manualLongitude = longitudeInput
     }
 
     private func stepRow(_ number: Int, _ text: LocalizedStringKey) -> some View {
