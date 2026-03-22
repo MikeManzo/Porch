@@ -2,9 +2,9 @@
 //  EcowittAdapter.swift
 //  Porch
 //
-//  Maps EcowittLiveData → AmbientLastData via JSON round-trip.
-//  AmbientLastData uses immutable `let` properties and Codable,
-//  so we build a dictionary matching its CodingKeys and decode.
+//  Maps EcowittLiveData → AmbientWeatherData via JSON round-trip.
+//  Both AmbientWeatherData and AmbientLastData use immutable properties
+//  and Codable, so we build dictionaries matching their CodingKeys and decode.
 //
 
 import Foundation
@@ -13,15 +13,59 @@ import EcowittLocal
 
 struct EcowittAdapter {
 
-    /// Convert Ecowitt live data to an AmbientLastData observation.
-    /// Returns nil if the JSON round-trip fails.
-    static func toAmbientLastData(from ecowitt: EcowittLiveData) -> AmbientLastData? {
+    /// Convert Ecowitt live data to a full AmbientWeatherData (with station info).
+    /// This is what WeatherManager.weatherData expects.
+    static func toAmbientWeatherData(
+        from ecowitt: EcowittLiveData,
+        latitude: Double?,
+        longitude: Double?,
+        stationName: String = "Ecowitt Gateway"
+    ) -> AmbientWeatherData? {
+        guard let observation = buildObservationDict(from: ecowitt) else { return nil }
+
+        let lat = latitude ?? 0
+        let lon = longitude ?? 0
+
+        let fullDict: [String: Any] = [
+            "lastData": observation,
+            "macAddress": "ecowitt-local",
+            "apiKey": "local",
+            "info": [
+                "name": stationName,
+                "coords": [
+                    "address": "",
+                    "elevation": 0.0,
+                    "geo": [
+                        "type": "Point",
+                        "coordinates": [lon, lat]
+                    ],
+                    "location": "\(lat), \(lon)",
+                    "coords": [
+                        "lat": lat,
+                        "lon": lon
+                    ]
+                ] as [String: Any]
+            ] as [String: Any]
+        ]
+
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: fullDict)
+            return try JSONDecoder().decode(AmbientWeatherData.self, from: jsonData)
+        } catch {
+            print("[Porch] EcowittAdapter WeatherData error: \(error)")
+            return nil
+        }
+    }
+
+    /// Build the observation dictionary matching AmbientLastData CodingKeys
+    private static func buildObservationDict(from ecowitt: EcowittLiveData) -> [String: Any]? {
         var dict: [String: Any] = [:]
 
-        // Metadata
+        // Metadata (dateUTC, deviceId, date, tz are all required non-optional fields)
         dict["dateutc"] = Int64(ecowitt.timestamp.timeIntervalSince1970 * 1000)
         dict["date"] = ISO8601DateFormatter().string(from: ecowitt.timestamp)
         dict["deviceId"] = "ecowitt-local"
+        dict["tz"] = TimeZone.current.identifier
 
         // Outdoor temperature & derived
         if let v = ecowitt.outdoorTemp { dict["tempf"] = v }
@@ -92,13 +136,6 @@ struct EcowittAdapter {
             if let v = ecowitt.batteries["soil\(ch)"] { dict["battsm\(ch)"] = v }
         }
 
-        // JSON round-trip to construct immutable AmbientLastData
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: dict)
-            return try JSONDecoder().decode(AmbientLastData.self, from: jsonData)
-        } catch {
-            print("[Porch] EcowittAdapter error: \(error.localizedDescription)")
-            return nil
-        }
+        return dict
     }
 }

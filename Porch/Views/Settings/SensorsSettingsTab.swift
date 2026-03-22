@@ -104,13 +104,15 @@ struct SensorsSettingsTab: View {
 
     // MARK: - Battery Status
 
-    /// Shows a green (good) or red (bad) circle for battery sensors. 1 = good, 0 = bad.
+    /// Shows a green (good) or red (bad) circle for battery sensors.
+    /// Integer batteries: 1 = good, 0 = low.
+    /// String batteries (e.g., battRain): "0" = good, "1" = low.
     private func batteryStatusIndicator(for key: String, observation: AmbientLastData) -> some View {
         let isGood: Bool = {
             guard let value = SensorFormatter.numericValue(for: key, from: observation) else {
                 if let str = Mirror(reflecting: observation).children.first(where: { $0.label == key })?.value as? Optional<String>,
                    let unwrapped = str {
-                    return unwrapped == "1"
+                    return unwrapped == "0"
                 }
                 return false
             }

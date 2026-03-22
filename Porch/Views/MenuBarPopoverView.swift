@@ -37,7 +37,7 @@ struct MenuBarPopoverView: View {
         // Station header with optional multi-station picker
         StationHeaderView(
             stationName: data.info.name,
-            stationLocation: data.info.coords.location,
+            stationLocation: manager.stationLocation,
             status: manager.connectionStatus
         )
 

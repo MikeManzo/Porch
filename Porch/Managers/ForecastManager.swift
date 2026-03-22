@@ -17,6 +17,8 @@ struct DailyForecast: Identifiable {
     let lowTemp: Double       // °F
     let weatherCode: Int      // WMO code
     let precipProbability: Int?
+    let sunrise: Date?
+    let sunset: Date?
 
     /// SF Symbol for the WMO weather code
     var icon: String {
@@ -205,7 +207,7 @@ class ForecastManager: ObservableObject {
             + "?latitude=\(latitude)"
             + "&longitude=\(longitude)"
             + "&current=weather_code,is_day"
-            + "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max"
+            + "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,sunrise,sunset"
             + "&temperature_unit=fahrenheit"
             + "&timezone=auto"
             + "&forecast_days=4"
@@ -233,6 +235,11 @@ class ForecastManager: ObservableObject {
             var forecasts: [DailyForecast] = []
             let count = response.daily.time.count
 
+            // Open-Meteo returns sunrise/sunset as "yyyy-MM-dd'T'HH:mm" (no seconds)
+            let sunFormatter = DateFormatter()
+            sunFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm"
+            sunFormatter.locale = Locale(identifier: "en_US_POSIX")
+
             for i in 0..<count {
                 guard let date = dateFormatter.date(from: response.daily.time[i]) else { continue }
                 let forecast = DailyForecast(
@@ -241,7 +248,11 @@ class ForecastManager: ObservableObject {
                     lowTemp: response.daily.temperature_2m_min[i],
                     weatherCode: response.daily.weather_code[i],
                     precipProbability: i < response.daily.precipitation_probability_max.count
-                        ? response.daily.precipitation_probability_max[i] : nil
+                        ? response.daily.precipitation_probability_max[i] : nil,
+                    sunrise: i < response.daily.sunrise.count
+                        ? sunFormatter.date(from: response.daily.sunrise[i]) : nil,
+                    sunset: i < response.daily.sunset.count
+                        ? sunFormatter.date(from: response.daily.sunset[i]) : nil
                 )
                 forecasts.append(forecast)
             }
@@ -275,6 +286,14 @@ class ForecastManager: ObservableObject {
         refreshTimer?.invalidate()
         refreshTimer = nil
     }
+
+    /// Clear cached data so the next fetch uses the latest API parameters
+    func reset() {
+        dailyForecasts = []
+        currentWeather = nil
+        lastFetchDate = nil
+        stopRefreshing()
+    }
 }
 
 // MARK: - Open-Meteo JSON Response
@@ -295,5 +314,7 @@ private struct OpenMeteoResponse: Decodable {
         let temperature_2m_min: [Double]
         let weather_code: [Int]
         let precipitation_probability_max: [Int]
+        let sunrise: [String]
+        let sunset: [String]
     }
 }

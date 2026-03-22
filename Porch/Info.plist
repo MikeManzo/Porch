@@ -8,5 +8,7 @@
 	<string>y+33YO6BpkfLECMjKFrZhjalMQzj7rNSHhtj3dNA3DY=</string>
 	<key>SUEnableInstallerLauncherService</key>
 	<true/>
+	<key>NSLocationUsageDescription</key>
+	<string>Porch uses your location to provide local weather forecasts and severe weather alerts.</string>
 </dict>
 </plist>

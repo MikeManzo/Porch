@@ -8,9 +8,19 @@
 import SwiftUI
 import Combine
 import AmbientWeather
+import EcowittLocal
 import UserNotifications
 import WeatherKit
 import CoreLocation
+import MapKit
+
+// MARK: - Data Source Mode
+
+/// Which weather data source to use
+enum DataSourceMode: String, CaseIterable {
+    case ambientCloud = "Ambient Weather"
+    case ecowittLocal = "Ecowitt (Local)"
+}
 
 // MARK: - Daily Extreme Record
 
@@ -184,6 +194,30 @@ class WeatherManager: ObservableObject {
     @Published var apiKeysRaw: String = UserDefaults.standard.string(forKey: "apiKeysRaw") ?? "" {
         didSet { UserDefaults.standard.set(apiKeysRaw, forKey: "apiKeysRaw") }
     }
+    // MARK: - Data Source
+
+    @Published var dataSourceMode: DataSourceMode = DataSourceMode(rawValue: UserDefaults.standard.string(forKey: "dataSourceMode") ?? "") ?? .ambientCloud {
+        didSet { UserDefaults.standard.set(dataSourceMode.rawValue, forKey: "dataSourceMode") }
+    }
+    @Published var ecowittHost: String = UserDefaults.standard.string(forKey: "ecowittHost") ?? "" {
+        didSet { UserDefaults.standard.set(ecowittHost, forKey: "ecowittHost") }
+    }
+    @Published var ecowittPort: Int = {
+        let stored = UserDefaults.standard.integer(forKey: "ecowittPort")
+        return stored > 0 ? stored : 80
+    }() {
+        didSet { UserDefaults.standard.set(ecowittPort, forKey: "ecowittPort") }
+    }
+    @Published var ecowittStationName: String = UserDefaults.standard.string(forKey: "ecowittStationName") ?? "" {
+        didSet { UserDefaults.standard.set(ecowittStationName, forKey: "ecowittStationName") }
+    }
+    @Published var manualLatitude: String = UserDefaults.standard.string(forKey: "manualLatitude") ?? "" {
+        didSet { UserDefaults.standard.set(manualLatitude, forKey: "manualLatitude") }
+    }
+    @Published var manualLongitude: String = UserDefaults.standard.string(forKey: "manualLongitude") ?? "" {
+        didSet { UserDefaults.standard.set(manualLongitude, forKey: "manualLongitude") }
+    }
+
     @Published var selectedSensorKey: String = UserDefaults.standard.string(forKey: "selectedSensorKey") ?? "tempF" {
         didSet { UserDefaults.standard.set(selectedSensorKey, forKey: "selectedSensorKey") }
     }
@@ -287,6 +321,8 @@ class WeatherManager: ObservableObject {
     // MARK: - Private
 
     private var socket: AmbientWebSocket?
+    private var ecowittClient: EcowittClient?
+    private var reverseGeocodedLocation: String = ""
     private var cancellables = Set<AnyCancellable>()
     private var lastAlertTimes: [String: Date] = [:]
     private var weatherKitTimer: Timer?
@@ -344,7 +380,14 @@ class WeatherManager: ObservableObject {
         UNUserNotificationCenter.current().delegate = notificationDelegate
 
         // Auto-connect at launch if credentials are stored
-        if !applicationKey.isEmpty && !apiKeysRaw.isEmpty {
+        let shouldAutoConnect: Bool
+        switch dataSourceMode {
+        case .ambientCloud:
+            shouldAutoConnect = !applicationKey.isEmpty && !apiKeysRaw.isEmpty
+        case .ecowittLocal:
+            shouldAutoConnect = !ecowittHost.isEmpty
+        }
+        if shouldAutoConnect {
             DispatchQueue.main.async { [weak self] in
                 self?.connect()
             }
@@ -399,16 +442,50 @@ class WeatherManager: ObservableObject {
 
     /// Station location, if connected
     var stationLocation: String {
-        weatherData?.info.coords.location ?? ""
+        if dataSourceMode == .ecowittLocal, !reverseGeocodedLocation.isEmpty {
+            return reverseGeocodedLocation
+        }
+        return weatherData?.info.coords.location ?? ""
+    }
+
+    /// Coordinates for weather services (forecast, alerts).
+    /// Uses station coords for Ambient, manual coords for Ecowitt.
+    var effectiveCoordinates: (lat: Double, lon: Double)? {
+        switch dataSourceMode {
+        case .ambientCloud:
+            guard let coords = weatherData?.info.coords.coords else { return nil }
+            return (coords.lat, coords.lon)
+        case .ecowittLocal:
+            guard let lat = Double(manualLatitude),
+                  let lon = Double(manualLongitude) else { return nil }
+            return (lat, lon)
+        }
+    }
+
+    /// Whether the Ecowitt data source is configured
+    var isEcowittConfigured: Bool {
+        !ecowittHost.isEmpty
     }
 
     // MARK: - Connection Management
 
     func connect() {
-        guard isConfigured else { return }
-
         // Tear down any existing connection
         disconnect()
+
+        switch dataSourceMode {
+        case .ambientCloud:
+            connectAmbient()
+        case .ecowittLocal:
+            connectEcowitt()
+        }
+
+        // Start WeatherKit polling (15-minute interval)
+        startWeatherKitPolling()
+    }
+
+    private func connectAmbient() {
+        guard isConfigured else { return }
 
         let ws = AmbientWebSocket(applicationKey: applicationKey)
         self.socket = ws
@@ -449,9 +526,78 @@ class WeatherManager: ObservableObject {
             .store(in: &cancellables)
 
         ws.connectStations(apiKeys: apiKeys)
+    }
 
-        // Start WeatherKit polling (15-minute interval)
-        startWeatherKitPolling()
+    private func connectEcowitt() {
+        guard isEcowittConfigured else { return }
+
+        let client = EcowittClient()
+        self.ecowittClient = client
+
+        // Map Ecowitt connection status → SocketStatus
+        client.$connectionStatus
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                switch status {
+                case .connected: self?.connectionStatus = .connected
+                case .connecting: self?.connectionStatus = .connecting
+                case .disconnected: self?.connectionStatus = .disconnected
+                }
+            }
+            .store(in: &cancellables)
+
+        // Map Ecowitt errors
+        client.$connectionError
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] error in
+                self?.connectionError = error
+            }
+            .store(in: &cancellables)
+
+        // Convert each Ecowitt update to full AmbientWeatherData and process
+        client.$liveData
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] ecowittData in
+                guard let self else { return }
+                let lat = Double(self.manualLatitude)
+                let lon = Double(self.manualLongitude)
+                guard let data = EcowittAdapter.toAmbientWeatherData(
+                    from: ecowittData,
+                    latitude: lat,
+                    longitude: lon,
+                    stationName: self.ecowittStationName.isEmpty ? "Ecowitt Gateway" : self.ecowittStationName
+                ) else { return }
+
+                let stationID = data.stationID
+                self.allStations[stationID] = data
+                if self.selectedStationID == nil {
+                    self.selectedStationID = stationID
+                }
+                if stationID == self.selectedStationID {
+                    self.weatherData = data
+                    self.processNewObservation(data.observation)
+                }
+            }
+            .store(in: &cancellables)
+
+        client.connect(host: ecowittHost, port: ecowittPort)
+
+        // Reverse geocode coordinates into a place name
+        if let lat = Double(manualLatitude), let lon = Double(manualLongitude) {
+            let location = CLLocation(latitude: lat, longitude: lon)
+            if let request = MKReverseGeocodingRequest(location: location) {
+                Task { [weak self] in
+                    let items = try? await request.mapItems
+                    if let item = items?.first,
+                       let cityContext = item.addressRepresentations?.cityWithContext {
+                        await MainActor.run {
+                            self?.reverseGeocodedLocation = cityContext
+                        }
+                    }
+                }
+            }
+        }
     }
 
     func disconnect() {
@@ -461,15 +607,24 @@ class WeatherManager: ObservableObject {
         cancellables.removeAll()
         socket?.disconnectStations()
         socket = nil
+        ecowittClient?.disconnect()
+        ecowittClient = nil
+        forecastManager?.reset()
         connectionStatus = .disconnected
         weatherData = nil
         connectionError = nil
         allStations.removeAll()
+        selectedStationID = nil
+        reverseGeocodedLocation = ""
     }
 
     func autoConnectIfNeeded() {
-        if isConfigured && connectionStatus == .disconnected {
-            connect()
+        guard connectionStatus == .disconnected else { return }
+        switch dataSourceMode {
+        case .ambientCloud:
+            if isConfigured { connect() }
+        case .ecowittLocal:
+            if isEcowittConfigured { connect() }
         }
     }
 
@@ -498,7 +653,7 @@ class WeatherManager: ObservableObject {
             }
         }
         // Trigger Open-Meteo forecast fetch when coordinates are available
-        if let coords = weatherData?.info.coords.coords,
+        if let coords = effectiveCoordinates,
            let fm = forecastManager, fm.dailyForecasts.isEmpty {
             Task {
                 await fm.fetchForecast(latitude: coords.lat, longitude: coords.lon)
@@ -807,7 +962,7 @@ class WeatherManager: ObservableObject {
     }
 
     private func fetchWeatherKitAlerts() async {
-        guard let coords = weatherData?.info.coords.coords else { return }
+        guard let coords = effectiveCoordinates else { return }
 
         let location = CLLocation(latitude: coords.lat, longitude: coords.lon)
 

@@ -56,7 +56,7 @@ struct CurrentConditionsPanel: View {
 
                 Spacer()
 
-                // Daily extremes
+                // Daily extremes & sun times
                 VStack(alignment: .trailing, spacing: 8) {
                     if let high = manager.dailyHighTemp {
                         extremeStat(icon: "thermometer.sun.fill", label: "Hi", value: formatTemp(high), tint: .red)
@@ -66,6 +66,14 @@ struct CurrentConditionsPanel: View {
                     }
                     if let gust = manager.dailyHighWind {
                         extremeStat(icon: "wind", label: "Gust", value: formatWind(gust), tint: .teal)
+                    }
+                    if let today = forecastManager.dailyForecasts.first {
+                        if let rise = today.sunrise {
+                            extremeStat(icon: "sunrise.fill", label: "Rise", value: rise.formatted(date: .omitted, time: .shortened), tint: .orange)
+                        }
+                        if let set = today.sunset {
+                            extremeStat(icon: "sunset.fill", label: "Set", value: set.formatted(date: .omitted, time: .shortened), tint: .indigo)
+                        }
                     }
                 }
             }

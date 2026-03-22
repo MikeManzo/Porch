@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		272CC8C22F702B1F0087210F /* EcowittLocal in Frameworks */ = {isa = PBXBuildFile; productRef = 272CC8C12F702B1F0087210F /* EcowittLocal */; };
 		273C11172F69752400C03BE0 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 273C11162F69752400C03BE0 /* Sparkle */; };
 		2779B0AE2F64C53100796366 /* AmbientWeather in Frameworks */ = {isa = PBXBuildFile; productRef = 2779B0AD2F64C53100796366 /* AmbientWeather */; };
 /* End PBXBuildFile section */
@@ -41,6 +42,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				272CC8C22F702B1F0087210F /* EcowittLocal in Frameworks */,
 				2779B0AE2F64C53100796366 /* AmbientWeather in Frameworks */,
 				273C11172F69752400C03BE0 /* Sparkle in Frameworks */,
 			);
@@ -87,6 +89,7 @@
 			packageProductDependencies = (
 				2779B0AD2F64C53100796366 /* AmbientWeather */,
 				273C11162F69752400C03BE0 /* Sparkle */,
+				272CC8C12F702B1F0087210F /* EcowittLocal */,
 			);
 			productName = Porch;
 			productReference = 2779B0952F64BD7D00796366 /* Porch.app */;
@@ -119,6 +122,7 @@
 			packageReferences = (
 				2779B0AC2F64C53100796366 /* XCRemoteSwiftPackageReference "AmbientWeatherSocket" */,
 				273C11152F69752400C03BE0 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				272CC8C02F702B1F0087210F /* XCRemoteSwiftPackageReference "EcowittLocal" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2779B0962F64BD7D00796366 /* Products */;
@@ -305,7 +309,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.6.4;
+				MARKETING_VERSION = 0.7;
 				PRODUCT_BUNDLE_IDENTIFIER = CitizenCoder.Porch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -350,7 +354,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.6.4;
+				MARKETING_VERSION = 0.7;
 				PRODUCT_BUNDLE_IDENTIFIER = CitizenCoder.Porch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -387,6 +391,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		272CC8C02F702B1F0087210F /* XCRemoteSwiftPackageReference "EcowittLocal" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/MikeManzo/EcowittLocal";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		273C11152F69752400C03BE0 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sparkle-project/Sparkle";
@@ -406,6 +418,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		272CC8C12F702B1F0087210F /* EcowittLocal */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 272CC8C02F702B1F0087210F /* XCRemoteSwiftPackageReference "EcowittLocal" */;
+			productName = EcowittLocal;
+		};
 		273C11162F69752400C03BE0 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 273C11152F69752400C03BE0 /* XCRemoteSwiftPackageReference "Sparkle" */;

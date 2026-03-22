@@ -1,5 +1,5 @@
 {
-  "originHash" : "217f3d9d33be37c7ff3799c444bcfe6ecc55cea6f09ce6973e2856c86dd24e86",
+  "originHash" : "8fb1b5dfa9ddebc3843e2a590683207e0676bec3d365f88a4c4793e97e72b98b",
   "pins" : [
     {
       "identity" : "ambientweathersocket",
@@ -8,6 +8,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "67b4750e362df20237c3595b36efb6a332893497"
+      }
+    },
+    {
+      "identity" : "ecowittlocal",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/MikeManzo/EcowittLocal",
+      "state" : {
+        "branch" : "main",
+        "revision" : "f69520dae1e98a5e8f2f133002155b04747d43c9"
       }
     },
     {

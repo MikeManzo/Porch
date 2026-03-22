@@ -22,13 +22,13 @@ struct WindRosePanel: View {
                 Text("Wind Rose")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
-                Picker("Range", selection: $timeRange) {
+                Picker("", selection: $timeRange) {
                     ForEach(ChartTimeRange.allCases, id: \.self) { range in
                         Text(range.rawValue).tag(range)
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 120)
+                //.frame(width: 120)
             }
 
             if snapshots.isEmpty {
@@ -45,7 +45,9 @@ struct WindRosePanel: View {
                     .frame(maxWidth: .infinity)
             }
         }
-        .padding(16)
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 16)
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
         .onAppear { loadData() }
         .onChange(of: timeRange) { loadData() }

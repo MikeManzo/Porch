@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import Combine
 import os.log
 
 /// Represents a discovered Ecowitt gateway on the local network
@@ -96,7 +97,7 @@ class EcowittScanner: ObservableObject {
         Self.logger.info("Scan complete. Found \(self.discoveredGateways.count) gateway(s)")
     }
 
-    private nonisolated static func probeGateway(at ip: String, port: Int = 80) async -> DiscoveredGateway? {
+    private static func probeGateway(at ip: String, port: Int = 80) async -> DiscoveredGateway? {
         guard let url = URL(string: "http://\(ip):\(port)/get_livedata_info") else { return nil }
 
         var request = URLRequest(url: url)
@@ -118,7 +119,7 @@ class EcowittScanner: ObservableObject {
         }
     }
 
-    private nonisolated static func detectModel(from json: [String: Any]) -> String {
+    private static func detectModel(from json: [String: Any]) -> String {
         if json["piezoRain"] != nil {
             return "Ecowitt Gateway (Piezo)"
         }

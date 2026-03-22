@@ -64,7 +64,7 @@ struct WeatherStationView: View {
                 topBar(data: data)
 
                 // Main two-column layout
-                HStack(alignment: .top, spacing: 16) {
+                HStack (alignment: .top, spacing: 16) {
                     // Left column (flexible width)
                     VStack(spacing: 16) {
                             CurrentConditionsPanel(observation: data.observation)
