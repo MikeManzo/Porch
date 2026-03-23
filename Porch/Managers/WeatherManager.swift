@@ -157,10 +157,13 @@ class WeatherManager: ObservableObject {
 
     // MARK: - Low Battery
 
-    /// Sensor keys with low battery
-    /// Note: Most sensors use 0 = low, but battLightning is inverted (0 = OK, 1 = low)
-    var lowBatterySensors: [String] {
-        guard let observation = weatherData?.observation else { return [] }
+    /// Cached low-battery sensor keys, updated each observation
+    @Published private(set) var lowBatterySensors: [String] = []
+
+    /// Recompute low-battery sensors from the current observation.
+    /// Uses Mirror reflection, so we call this once per update rather than
+    /// on every SwiftUI view evaluation.
+    private func updateLowBatterySensors(_ observation: AmbientLastData) {
         let batteryKeys = ["battIn", "battRain", "battLightning", "battOut",
                            "batleak1", "batleak2", "batleak3", "batleak4",
                            "battsm1", "battsm2", "battsm3", "battsm4",
@@ -187,7 +190,7 @@ class WeatherManager: ObservableObject {
                 }
             }
         }
-        return lowKeys
+        lowBatterySensors = lowKeys
     }
 
     // MARK: - Severe Weather (WeatherKit)
@@ -792,6 +795,7 @@ class WeatherManager: ObservableObject {
     private func processNewObservation(_ observation: AmbientLastData) {
         updatePressureTrend(observation)
         updateDailyExtremes(observation)
+        updateLowBatterySensors(observation)
         if alertsEnabled {
             checkAlerts(observation)
         }
@@ -801,15 +805,15 @@ class WeatherManager: ObservableObject {
         // Trigger first WeatherKit fetch once we have valid data
         if severeWeatherAlertEnabled && !hasFetchedWeatherKitOnce {
             hasFetchedWeatherKitOnce = true
-            Task {
-                await fetchWeatherKitAlerts()
+            Task { [weak self] in
+                await self?.fetchWeatherKitAlerts()
             }
         }
         // Trigger Open-Meteo forecast fetch when coordinates are available
         if let coords = effectiveCoordinates,
            let fm = forecastManager, fm.dailyForecasts.isEmpty {
-            Task {
-                await fm.fetchForecast(latitude: coords.lat, longitude: coords.lon)
+            Task { [weak fm] in
+                await fm?.fetchForecast(latitude: coords.lat, longitude: coords.lon)
             }
         }
     }
@@ -1013,6 +1017,23 @@ class WeatherManager: ObservableObject {
             }
         }
         if didChange { persistSnoozeStates() }
+
+        // Prune stale alert throttle entries (older than 24h)
+        let pruneDate = Date()
+        let pruneThreshold = pruneDate.addingTimeInterval(-86400)
+        lastAlertTimes = lastAlertTimes.filter { $0.value > pruneThreshold }
+
+        // Prune snooze entries that have cleared or expired
+        let snoozeCountBefore = snoozeStates.count
+        snoozeStates = snoozeStates.filter { _, entry in
+            switch entry.kind {
+            case .timed(let until):
+                return pruneDate < until  // keep only if still snoozed
+            case .untilCleared:
+                return !entry.hasCleared  // keep only if not yet cleared
+            }
+        }
+        if snoozeStates.count != snoozeCountBefore { persistSnoozeStates() }
     }
 
     private func sendAlert(key: String, title: String, body: String, detailsURL: URL? = nil) {

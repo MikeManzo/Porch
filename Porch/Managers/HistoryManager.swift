@@ -61,6 +61,9 @@ class HistoryManager {
 
         // Prune old data periodically
         pruneOldData()
+
+        // Explicit save to flush the in-memory object graph and prevent unbounded growth
+        try? modelContext.save()
     }
 
     // MARK: - Query Methods

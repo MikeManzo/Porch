@@ -208,13 +208,27 @@ struct WeatherStationView: View {
         HStack {
             // Station info
             VStack(alignment: .leading, spacing: 2) {
-                Text(data.info.name)
-                    .font(.headline)
-                    .foregroundStyle(.white)
+                HStack {
+                    Text(data.info.name)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                    
+                    // Connection source indicator
+                    Image(systemName: sourceIcon)
+                        .foregroundStyle(statusColor)
+                        .font(.system(size: 10))
+                        .help(statusHelpText)
+                }
                 Text("Updated \(data.observation.observationDateFormatted)")
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.4))
             }
+
+            // Connection source indicator
+//            Image(systemName: sourceIcon)
+//                .foregroundStyle(statusColor)
+//                .font(.system(size: 10))
+//                .help(statusHelpText)
 
             Spacer()
 
@@ -229,6 +243,34 @@ struct WeatherStationView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 4)
+    }
+
+    // MARK: - Status Indicator
+
+    private var sourceIcon: String {
+        switch manager.activeDataSource {
+        case .ambient: "cloud.fill"
+        case .ecowitt: "point.3.filled.connected.trianglepath.dotted"
+        case .none: "circle.fill"
+        }
+    }
+
+    private var statusColor: Color {
+        switch manager.connectionStatus {
+        case .connected:    .green
+        case .connecting:   .orange
+        case .disconnected: .red
+        }
+    }
+
+    private var statusHelpText: String {
+        switch (manager.connectionStatus, manager.activeDataSource) {
+        case (.connected, .ambient):  "Connected via Cloud"
+        case (.connected, .ecowitt):  "Connected via Local"
+        case (.connected, .none):     "Connected"
+        case (.connecting, _):        "Connecting..."
+        case (.disconnected, _):      "Disconnected"
+        }
     }
 
     // MARK: - Empty State

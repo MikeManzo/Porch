@@ -50,6 +50,7 @@ struct WindRosePanel: View {
         .padding(.bottom, 16)
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
         .onAppear { loadData() }
+        .onDisappear { snapshots = [] }
         .onChange(of: timeRange) { loadData() }
     }
 

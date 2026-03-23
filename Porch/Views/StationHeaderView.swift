@@ -12,6 +12,7 @@ struct StationHeaderView: View {
     let stationName: String
     let stationLocation: String
     let status: SocketStatus
+    var activeSource: ActiveSource = .none
 
     var body: some View {
         HStack(alignment: .center) {
@@ -27,12 +28,20 @@ struct StationHeaderView: View {
 
             Spacer()
 
-            Circle()
-                .fill(statusColor)
-                .frame(width: 8, height: 8)
-                .help(status.rawValue.capitalized)
+            Image(systemName: statusIcon)
+                .foregroundStyle(statusColor)
+                .font(.system(size: 10))
+                .help(statusHelpText)
         }
         .padding(12)
+    }
+
+    private var statusIcon: String {
+        switch activeSource {
+        case .ambient: "cloud.fill"
+        case .ecowitt: "point.3.filled.connected.trianglepath.dotted"
+        case .none: "circle.fill"
+        }
     }
 
     private var statusColor: Color {
@@ -40,6 +49,16 @@ struct StationHeaderView: View {
         case .connected:    .green
         case .connecting:   .orange
         case .disconnected: .red
+        }
+    }
+
+    private var statusHelpText: String {
+        switch (status, activeSource) {
+        case (.connected, .ambient):  "Connected via Cloud"
+        case (.connected, .ecowitt):  "Connected via Local"
+        case (.connected, .none):     "Connected"
+        case (.connecting, _):        "Connecting..."
+        case (.disconnected, _):      "Disconnected"
         }
     }
 }
