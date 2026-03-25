@@ -127,16 +127,6 @@ struct AlertsSettingsTab: View {
                 .disabled(!manager.weatherAlertEnabled)
 
                 HStack {
-                    Text("Heavy Rain (\"/hr)")
-                    Spacer()
-                    TextField("", value: manager.deferredBinding(for: \.heavyRainAlert), format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 80)
-                        .multilineTextAlignment(.trailing)
-                }
-                .disabled(!manager.weatherAlertEnabled)
-
-                HStack {
                     Text("High Humidity (%)")
                     Spacer()
                     TextField("", value: manager.deferredBinding(for: \.highHumidityAlert), format: .number)
@@ -148,6 +138,26 @@ struct AlertsSettingsTab: View {
             } header: {
                 Label("Weather", systemImage: "cloud.sun.fill")
                     .foregroundStyle(.cyan)
+            }
+            .disabled(!manager.alertsEnabled)
+
+            Section {
+                Toggle(isOn: manager.deferredBinding(for: \.rainAlertEnabled)) {
+                    Label("Rain Alerts", systemImage: "cloud.rain.fill")
+                }
+
+                HStack {
+                    Text("Heavy Rain (\"/hr)")
+                    Spacer()
+                    TextField("", value: manager.deferredBinding(for: \.heavyRainAlert), format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 80)
+                        .multilineTextAlignment(.trailing)
+                }
+                .disabled(!manager.rainAlertEnabled)
+            } header: {
+                Label("Rain", systemImage: "cloud.rain.fill")
+                    .foregroundStyle(.blue)
             }
             .disabled(!manager.alertsEnabled)
 
@@ -199,4 +209,5 @@ struct AlertsSettingsTab: View {
         }
         .formStyle(.grouped)
     }
+
 }

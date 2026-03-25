@@ -104,19 +104,36 @@ struct SensorsSettingsTab: View {
 
     // MARK: - Battery Status
 
-    /// Shows a green (good) or red (bad) circle for battery sensors.
-    /// Integer batteries: 1 = good, 0 = low.
-    /// String batteries (e.g., battRain): "0" = good, "1" = low.
+    /// Battery keys where the convention is inverted: 0 = OK, 1 = low
+    private static let invertedBatteryKeys: Set<String> = ["battLightning"]
+
+    /// Shows a green (good) or red (bad) indicator for battery sensors.
+    ///
+    /// Ambient Weather battery conventions:
+    /// - Most Int batteries: 1 = OK, 0 = low
+    /// - `battLightning` (Int): **inverted** — 0 = OK, 1 = low
+    /// - `battRain` (String): non-zero = OK, "0" = low (same as Int convention, just String-typed)
     private func batteryStatusIndicator(for key: String, observation: AmbientLastData) -> some View {
         let isGood: Bool = {
-            guard let value = SensorFormatter.numericValue(for: key, from: observation) else {
-                if let str = Mirror(reflecting: observation).children.first(where: { $0.label == key })?.value as? Optional<String>,
-                   let unwrapped = str {
-                    return unwrapped == "0"
+            // Try numeric value first (Int-typed batteries)
+            if let value = SensorFormatter.numericValue(for: key, from: observation) {
+                let intValue = Int(value)
+                if Self.invertedBatteryKeys.contains(key) {
+                    return intValue == 0  // 0 = OK for inverted keys
                 }
-                return false
+                return intValue >= 1  // 1 = OK for normal keys
             }
-            return value >= 1
+            // String-typed batteries (e.g., battRain): same convention as Int — "0" = low
+            let mirror = Mirror(reflecting: observation)
+            if let child = mirror.children.first(where: { $0.label == key }) {
+                let valueMirror = Mirror(reflecting: child.value)
+                if valueMirror.displayStyle == .optional,
+                   let inner = valueMirror.children.first?.value,
+                   let str = inner as? String {
+                    return str != "0"  // non-zero = OK
+                }
+            }
+            return false
         }()
 
         return HStack(spacing: 6) {

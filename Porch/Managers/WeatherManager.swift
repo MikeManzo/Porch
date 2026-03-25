@@ -285,6 +285,9 @@ class WeatherManager: ObservableObject {
     @Published var lightningAlertEnabled: Bool = UserDefaults.standard.bool(forKey: "lightningAlertEnabled") {
         didSet { UserDefaults.standard.set(lightningAlertEnabled, forKey: "lightningAlertEnabled") }
     }
+    @Published var rainAlertEnabled: Bool = UserDefaults.standard.bool(forKey: "rainAlertEnabled") {
+        didSet { UserDefaults.standard.set(rainAlertEnabled, forKey: "rainAlertEnabled") }
+    }
     @Published var heavyRainAlert: Double = UserDefaults.standard.double(forKey: "heavyRainAlert") {
         didSet { UserDefaults.standard.set(heavyRainAlert, forKey: "heavyRainAlert") }
     }
@@ -973,17 +976,17 @@ class WeatherManager: ObservableObject {
                           body: "UV index is \(uv) — protect your skin!")
             }
 
-            if let rain = observation.hourlyRainIn, heavyRainAlert > 0, rain >= heavyRainAlert {
-                activeKeys.insert("heavyRain")
-                sendAlert(key: "heavyRain", title: "Heavy Rain Alert",
-                          body: "Rain rate is \(String(format: "%.2f", rain))\"/hr")
-            }
-
             if let humidity = observation.humidity, highHumidityAlert > 0, Double(humidity) >= highHumidityAlert {
                 activeKeys.insert("highHumidity")
                 sendAlert(key: "highHumidity", title: "High Humidity Alert",
                           body: "Humidity is \(humidity)%")
             }
+        }
+
+        if rainAlertEnabled, let rain = observation.hourlyRainIn, heavyRainAlert > 0, rain >= heavyRainAlert {
+            activeKeys.insert("heavyRain")
+            sendAlert(key: "heavyRain", title: "Heavy Rain Alert",
+                      body: "Rain rate is \(String(format: "%.2f", rain))\"/hr")
         }
 
         if lightningAlertEnabled, let strikes = observation.lightningDay, strikes > 0 {
