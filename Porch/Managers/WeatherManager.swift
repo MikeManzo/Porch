@@ -393,6 +393,18 @@ class WeatherManager: ObservableObject {
         notificationDelegate.manager = self
         UNUserNotificationCenter.current().delegate = notificationDelegate
 
+        // Listen for system wake to re-probe the local gateway
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor [weak self] in
+                self?.handleSystemWake()
+            }
+        }
+
         // Auto-connect at launch if credentials are stored
         let shouldAutoConnect: Bool
         switch dataSourceMode {
@@ -713,6 +725,25 @@ class WeatherManager: ObservableObject {
                 if reachable {
                     self.switchAutoSource(to: .ecowitt)
                 }
+            }
+        }
+    }
+
+    /// Called when the system wakes from sleep. If in auto mode on the cloud source,
+    /// probe the local gateway and switch back if reachable.
+    private func handleSystemWake() {
+        guard dataSourceMode == .auto,
+              activeDataSource == .ambient,
+              isEcowittConfigured else { return }
+
+        Task { [weak self] in
+            // Brief delay to let the network interface come back up
+            try? await Task.sleep(for: .seconds(3))
+            guard let self, self.dataSourceMode == .auto, self.activeDataSource == .ambient else { return }
+
+            let reachable = await self.probeEcowittGateway()
+            if reachable {
+                self.switchAutoSource(to: .ecowitt)
             }
         }
     }
