@@ -8,8 +8,6 @@
 import SwiftUI
 import SwiftData
 import AmbientWeather
-import UniformTypeIdentifiers
-
 // MARK: - Graph Panel Identifier
 
 /// Identifies each reorderable trend-chart graph in the left column
@@ -34,7 +32,6 @@ struct WeatherStationView: View {
     @EnvironmentObject var manager: WeatherManager
     @Environment(\.dismiss) private var dismiss
     @State private var graphOrder: [GraphPanel]
-    @State private var draggingGraph: GraphPanel?
     @State private var hoveredGraph: GraphPanel?
 
     private static let graphOrderKey = "dashboardGraphOrder"
@@ -109,37 +106,40 @@ struct WeatherStationView: View {
                         // Fixed: Current Conditions
                         CurrentConditionsPanel(observation: data.observation)
 
-                        // Fixed: Atmospheric & Precipitation
-                        HStack(alignment: .top, spacing: 16) {
+                        // Fixed: Atmospheric & Precipitation (equal height)
+                        HStack(spacing: 16) {
                             AtmosphericPanel(observation: data.observation)
+                                .frame(maxHeight: .infinity, alignment: .top)
                             PrecipitationPanel(observation: data.observation)
+                                .frame(maxHeight: .infinity, alignment: .top)
                         }
+                        .fixedSize(horizontal: false, vertical: true)
 
                         // Reorderable graph panels
-                        ForEach(visibleGraphs(for: data)) { graph in
-                            graphContent(for: graph, data: data)
-                                .overlay(alignment: .top) {
-                                    GraphDragHandle(isVisible: hoveredGraph == graph) {
-                                        draggingGraph = graph
-                                        return NSItemProvider(object: graph.rawValue as NSString)
+                        let visible = visibleGraphs(for: data)
+                        ForEach(visible) { graph in
+                            VStack(spacing: 0) {
+                                // Reorder controls (shown on hover)
+                                GraphReorderBar(
+                                    isVisible: hoveredGraph == graph,
+                                    canMoveUp: visible.first != graph,
+                                    canMoveDown: visible.last != graph,
+                                    onMoveUp: { moveGraph(graph, direction: .up, in: visible) },
+                                    onMoveDown: { moveGraph(graph, direction: .down, in: visible) }
+                                )
+
+                                graphContent(for: graph, data: data)
+                            }
+                            .glassEffect(.regular, in: .rect(cornerRadius: 16))
+                            .background {
+                                HoverTracker { hovering in
+                                    if hovering {
+                                        hoveredGraph = graph
+                                    } else if hoveredGraph == graph {
+                                        hoveredGraph = nil
                                     }
                                 }
-                                .background {
-                                    HoverTracker { hovering in
-                                        if hovering {
-                                            hoveredGraph = graph
-                                        } else if hoveredGraph == graph {
-                                            hoveredGraph = nil
-                                        }
-                                    }
-                                }
-                                .onDrop(of: [.plainText], delegate: GraphDropDelegate(
-                                    graph: graph,
-                                    graphs: $graphOrder,
-                                    draggingGraph: $draggingGraph,
-                                    onReorder: saveGraphOrder
-                                ))
-                                .opacity(draggingGraph == graph ? 0.5 : 1.0)
+                            }
                         }
 
                         // Fixed: Weekly Extremes
@@ -185,6 +185,24 @@ struct WeatherStationView: View {
         }
     }
 
+    private enum MoveDirection { case up, down }
+
+    /// Moves a graph panel up or down among the visible graphs, swapping positions in the master order
+    private func moveGraph(_ graph: GraphPanel, direction: MoveDirection, in visible: [GraphPanel]) {
+        guard let visibleIndex = visible.firstIndex(of: graph) else { return }
+        let adjacentIndex = direction == .up ? visibleIndex - 1 : visibleIndex + 1
+        guard visible.indices.contains(adjacentIndex) else { return }
+
+        let adjacent = visible[adjacentIndex]
+        guard let from = graphOrder.firstIndex(of: graph),
+              let to = graphOrder.firstIndex(of: adjacent) else { return }
+
+        withAnimation(.easeInOut(duration: 0.25)) {
+            graphOrder.swapAt(from, to)
+        }
+        saveGraphOrder()
+    }
+
     // MARK: - Graph Content
 
     @ViewBuilder
@@ -205,7 +223,8 @@ struct WeatherStationView: View {
                         valuePath: \.indoorTemp,
                         color: .green,
                         convertToMetric: { ($0 - 32) * 5.0 / 9.0 }
-                    ) : nil
+                    ) : nil,
+                showGlass: false
             )
 
         case .humidity:
@@ -221,7 +240,8 @@ struct WeatherStationView: View {
                         label: "Indoor",
                         valuePath: \.indoorHumidityDouble,
                         color: .green
-                    ) : nil
+                    ) : nil,
+                showGlass: false
             )
 
         case .pressure:
@@ -232,7 +252,8 @@ struct WeatherStationView: View {
                 unitSuffix: manager.unitSystem == .metric ? " hPa" : " inHg",
                 color: .purple,
                 unitSystem: manager.unitSystem,
-                convertToMetric: { $0 * 33.8639 }
+                convertToMetric: { $0 * 33.8639 },
+                showGlass: false
             )
 
         case .windSpeed:
@@ -249,7 +270,8 @@ struct WeatherStationView: View {
                     valuePath: \.windGust,
                     color: .orange,
                     convertToMetric: { $0 * 1.60934 }
-                )
+                ),
+                showGlass: false
             )
 
         case .solarUV:
@@ -265,7 +287,8 @@ struct WeatherStationView: View {
                         label: "UV",
                         valuePath: \.uvDouble,
                         color: .purple
-                    ) : nil
+                    ) : nil,
+                showGlass: false
             )
 
         case .rain:
@@ -276,7 +299,8 @@ struct WeatherStationView: View {
                 unitSuffix: manager.unitSystem == .metric ? " mm" : "\"",
                 color: .blue,
                 unitSystem: manager.unitSystem,
-                convertToMetric: { $0 * 25.4 }
+                convertToMetric: { $0 * 25.4 },
+                showGlass: false
             )
 
         case .pm25:
@@ -286,7 +310,8 @@ struct WeatherStationView: View {
                 valuePath: \.pm25,
                 unitSuffix: " µg/m³",
                 color: .green,
-                unitSystem: manager.unitSystem
+                unitSystem: manager.unitSystem,
+                showGlass: false
             )
         }
     }
@@ -412,58 +437,41 @@ struct HoverTracker: NSViewRepresentable {
     }
 }
 
-// MARK: - Graph Drag Handle
+// MARK: - Graph Reorder Bar
 
-/// Grip handle that appears on hover and serves as the drag source for reordering graphs
-struct GraphDragHandle: View {
+/// Reorder controls shown on hover — up/down buttons for moving graph panels.
+/// Always in layout (fixed height) to prevent jitter; fades in/out via opacity.
+struct GraphReorderBar: View {
     var isVisible: Bool
-    var onDragStarted: () -> NSItemProvider
+    var canMoveUp: Bool
+    var canMoveDown: Bool
+    var onMoveUp: () -> Void
+    var onMoveDown: () -> Void
 
     var body: some View {
-        Image(systemName: "line.3.horizontal")
-            .font(.system(size: 14, weight: .medium))
-            .foregroundStyle(.white.opacity(0.7))
-            .frame(width: 36, height: 20)
-            .background(.white.opacity(0.12), in: Capsule())
-            .opacity(isVisible ? 1 : 0)
-            .animation(.easeInOut(duration: 0.15), value: isVisible)
-            .padding(.top, 6)
-            .onDrag(onDragStarted)
-    }
-}
+        HStack(spacing: 16) {
+            Spacer()
 
-// MARK: - Graph Drop Delegate
+            Button(action: onMoveUp) {
+                Image(systemName: "chevron.up")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.primary.opacity(canMoveUp ? 0.5 : 0.15))
+            }
+            .buttonStyle(.plain)
+            .disabled(!canMoveUp)
 
-/// Handles drag-and-drop reordering of graph panels
-struct GraphDropDelegate: DropDelegate {
-    let graph: GraphPanel
-    @Binding var graphs: [GraphPanel]
-    @Binding var draggingGraph: GraphPanel?
-    let onReorder: () -> Void
+            Button(action: onMoveDown) {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.primary.opacity(canMoveDown ? 0.5 : 0.15))
+            }
+            .buttonStyle(.plain)
+            .disabled(!canMoveDown)
 
-    func performDrop(info: DropInfo) -> Bool {
-        draggingGraph = nil
-        onReorder()
-        return true
-    }
-
-    func dropEntered(info: DropInfo) {
-        guard let dragging = draggingGraph,
-              dragging != graph,
-              let fromIndex = graphs.firstIndex(of: dragging),
-              let toIndex = graphs.firstIndex(of: graph) else { return }
-
-        withAnimation(.easeInOut(duration: 0.2)) {
-            graphs.move(fromOffsets: IndexSet(integer: fromIndex),
-                        toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
+            Spacer()
         }
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
-
-    func validateDrop(info: DropInfo) -> Bool {
-        true
+        .frame(height: 20)
+        .opacity(isVisible ? 1 : 0)
+        .animation(.easeInOut(duration: 0.15), value: isVisible)
     }
 }

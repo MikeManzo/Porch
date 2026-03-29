@@ -13,6 +13,7 @@ struct CurrentConditionsPanel: View {
     let observation: AmbientLastData
     @EnvironmentObject var manager: WeatherManager
     @EnvironmentObject var forecastManager: ForecastManager
+    @State private var selectedForecastID: UUID?
 
     private var isMetric: Bool { manager.unitSystem == .metric }
 
@@ -130,6 +131,18 @@ struct CurrentConditionsPanel: View {
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                             .frame(width: 80)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                withAnimation(.easeInOut(duration: 0.15)) {
+                                    selectedForecastID = selectedForecastID == day.id ? nil : day.id
+                                }
+                            }
+                            .popover(isPresented: Binding(
+                                get: { selectedForecastID == day.id },
+                                set: { if !$0 { selectedForecastID = nil } }
+                            )) {
+                                forecastPopover(for: day)
+                            }
                         }
                     }
                 }
@@ -137,6 +150,122 @@ struct CurrentConditionsPanel: View {
         }
         .padding(20)
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
+    }
+
+    // MARK: - Forecast Popover
+
+    private func forecastPopover(for day: DailyForecast) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Day and date header
+            HStack(spacing: 8) {
+                Image(systemName: day.icon)
+                    .font(.system(size: 28))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(day.iconColor)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(day.date.formatted(.dateTime.weekday(.wide)))
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text(day.date.formatted(.dateTime.month(.wide).day()))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+
+            // Condition
+            Text(day.conditionText)
+                .font(.body.weight(.medium))
+                .foregroundStyle(.primary)
+
+            Divider()
+
+            // Temperature
+            HStack(spacing: 16) {
+                Label(formatTemp(day.highTemp), systemImage: "thermometer.sun.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.red)
+                Label(formatTemp(day.lowTemp), systemImage: "thermometer.snowflake")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.cyan)
+            }
+
+            // Feels-like
+            if let flHigh = day.feelsLikeHigh, let flLow = day.feelsLikeLow {
+                HStack(spacing: 16) {
+                    Label("Feels \(formatTemp(flHigh))", systemImage: "person.and.background.dotted")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Label("Feels \(formatTemp(flLow))", systemImage: "person.and.background.dotted")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Precipitation
+            if day.precipProbability != nil || day.precipAmount != nil {
+                HStack(spacing: 16) {
+                    if let prob = day.precipProbability {
+                        Label("\(prob)%", systemImage: "drop.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.blue)
+                    }
+                    if let amount = day.precipAmount, amount > 0 {
+                        Label(formatRain(amount), systemImage: "cloud.rain")
+                            .font(.subheadline)
+                            .foregroundStyle(.blue)
+                    }
+                }
+            }
+
+            // Wind
+            if day.windSpeedMax != nil || day.windGustMax != nil {
+                HStack(spacing: 16) {
+                    if let speed = day.windSpeedMax {
+                        Label(formatWind(speed), systemImage: "wind")
+                            .font(.subheadline)
+                            .foregroundStyle(.teal)
+                    }
+                    if let gust = day.windGustMax {
+                        Label("Gusts \(formatWind(gust))", systemImage: "wind")
+                            .font(.subheadline)
+                            .foregroundStyle(.teal)
+                    }
+                    if let dir = day.windDirection {
+                        Text(windDirectionLabel(dir))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            // UV Index
+            if let uv = day.uvIndexMax {
+                Label("UV \(String(format: "%.0f", uv)) — \(uvDescription(uv))", systemImage: "sun.max.trianglebadge.exclamationmark.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(uvColor(uv))
+            }
+
+            // Sunrise / Sunset
+            if day.sunrise != nil || day.sunset != nil {
+                HStack(spacing: 16) {
+                    if let rise = day.sunrise {
+                        Label(rise.formatted(date: .omitted, time: .shortened), systemImage: "sunrise.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.orange)
+                    }
+                    if let set = day.sunset {
+                        Label(set.formatted(date: .omitted, time: .shortened), systemImage: "sunset.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.indigo)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .frame(width: 280)
     }
 
     // MARK: - Helpers
@@ -164,6 +293,40 @@ struct CurrentConditionsPanel: View {
         let display = isMetric ? speed * 1.60934 : speed
         let unit = isMetric ? "km/h" : "mph"
         return String(format: "%.0f %@", display, unit)
+    }
+
+    private func formatRain(_ inches: Double) -> String {
+        if isMetric {
+            return String(format: "%.1f mm", inches * 25.4)
+        }
+        return String(format: "%.2f\"", inches)
+    }
+
+    private func windDirectionLabel(_ degrees: Int) -> String {
+        let directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+                          "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+        let index = Int((Double(degrees) + 11.25) / 22.5) % 16
+        return directions[index]
+    }
+
+    private func uvDescription(_ uv: Double) -> String {
+        switch uv {
+        case ..<3: return "Low"
+        case 3..<6: return "Moderate"
+        case 6..<8: return "High"
+        case 8..<11: return "Very High"
+        default: return "Extreme"
+        }
+    }
+
+    private func uvColor(_ uv: Double) -> Color {
+        switch uv {
+        case ..<3: return .green
+        case 3..<6: return .yellow
+        case 6..<8: return .orange
+        case 8..<11: return .red
+        default: return .purple
+        }
     }
 
     private func dayAbbreviation(_ date: Date) -> String {

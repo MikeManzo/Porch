@@ -29,25 +29,28 @@ struct PrecipitationPanel: View {
             // Rain periods grid
             let periods = buildRainPeriods()
             if !periods.isEmpty {
-                LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: 6),
-                    GridItem(.flexible(), spacing: 6),
-                    GridItem(.flexible(), spacing: 6)
-                ], spacing: 6) {
-                    ForEach(periods, id: \.label) { period in
-                        VStack(spacing: 3) {
-                            Text(period.value)
-                                .font(.system(.callout, design: .rounded, weight: .semibold))
-                                .foregroundStyle(.white)
-                            Text(period.label)
-                                .font(.caption2)
-                                .foregroundStyle(.white.opacity(0.4))
+                let rows = stride(from: 0, to: periods.count, by: 3).map {
+                    Array(periods[$0..<min($0 + 3, periods.count)])
+                }
+                VStack(spacing: 6) {
+                    ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                        HStack(spacing: 6) {
+                            ForEach(row, id: \.label) { period in
+                                VStack(spacing: 4) {
+                                    Text(period.value)
+                                        .font(.system(.callout, design: .rounded, weight: .semibold))
+                                        .foregroundStyle(.white)
+                                    Text(period.label)
+                                        .font(.caption2)
+                                        .foregroundStyle(.white.opacity(0.4))
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
+                            }
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
                     }
                 }
+                .frame(maxHeight: .infinity)
             } else {
                 Text("No rain data")
                     .font(.caption)

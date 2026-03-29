@@ -15,8 +15,15 @@ struct DailyForecast: Identifiable {
     let date: Date
     let highTemp: Double      // °F
     let lowTemp: Double       // °F
+    let feelsLikeHigh: Double? // °F apparent
+    let feelsLikeLow: Double?  // °F apparent
     let weatherCode: Int      // WMO code
     let precipProbability: Int?
+    let precipAmount: Double?  // inches
+    let windSpeedMax: Double?  // mph
+    let windGustMax: Double?   // mph
+    let windDirection: Int?    // degrees
+    let uvIndexMax: Double?
     let sunrise: Date?
     let sunset: Date?
 
@@ -207,8 +214,10 @@ class ForecastManager: ObservableObject {
             + "?latitude=\(latitude)"
             + "&longitude=\(longitude)"
             + "&current=weather_code,is_day"
-            + "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,sunrise,sunset"
+            + "&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,weather_code,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,uv_index_max,sunrise,sunset"
             + "&temperature_unit=fahrenheit"
+            + "&wind_speed_unit=mph"
+            + "&precipitation_unit=inch"
             + "&timezone=auto"
             + "&forecast_days=4"
 
@@ -242,17 +251,25 @@ class ForecastManager: ObservableObject {
 
             for i in 0..<count {
                 guard let date = dateFormatter.date(from: response.daily.time[i]) else { continue }
+                let d = response.daily
                 let forecast = DailyForecast(
                     date: date,
-                    highTemp: response.daily.temperature_2m_max[i],
-                    lowTemp: response.daily.temperature_2m_min[i],
-                    weatherCode: response.daily.weather_code[i],
-                    precipProbability: i < response.daily.precipitation_probability_max.count
-                        ? response.daily.precipitation_probability_max[i] : nil,
-                    sunrise: i < response.daily.sunrise.count
-                        ? sunFormatter.date(from: response.daily.sunrise[i]) : nil,
-                    sunset: i < response.daily.sunset.count
-                        ? sunFormatter.date(from: response.daily.sunset[i]) : nil
+                    highTemp: d.temperature_2m_max[i],
+                    lowTemp: d.temperature_2m_min[i],
+                    feelsLikeHigh: d.apparent_temperature_max?[safe: i],
+                    feelsLikeLow: d.apparent_temperature_min?[safe: i],
+                    weatherCode: d.weather_code[i],
+                    precipProbability: i < d.precipitation_probability_max.count
+                        ? d.precipitation_probability_max[i] : nil,
+                    precipAmount: d.precipitation_sum?[safe: i],
+                    windSpeedMax: d.wind_speed_10m_max?[safe: i],
+                    windGustMax: d.wind_gusts_10m_max?[safe: i],
+                    windDirection: d.wind_direction_10m_dominant?[safe: i],
+                    uvIndexMax: d.uv_index_max?[safe: i],
+                    sunrise: i < d.sunrise.count
+                        ? sunFormatter.date(from: d.sunrise[i]) : nil,
+                    sunset: i < d.sunset.count
+                        ? sunFormatter.date(from: d.sunset[i]) : nil
                 )
                 forecasts.append(forecast)
             }
@@ -312,9 +329,24 @@ private struct OpenMeteoResponse: Decodable {
         let time: [String]
         let temperature_2m_max: [Double]
         let temperature_2m_min: [Double]
+        let apparent_temperature_max: [Double]?
+        let apparent_temperature_min: [Double]?
         let weather_code: [Int]
         let precipitation_probability_max: [Int]
+        let precipitation_sum: [Double]?
+        let wind_speed_10m_max: [Double]?
+        let wind_gusts_10m_max: [Double]?
+        let wind_direction_10m_dominant: [Int]?
+        let uv_index_max: [Double]?
         let sunrise: [String]
         let sunset: [String]
+    }
+}
+
+// MARK: - Safe Array Subscript
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }

@@ -109,9 +109,13 @@ struct AnimatedCompassRoseView: View {
                 .font(.system(size: 10, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.5))
             if let gust = windGust, gust > 0 {
-                Text("G: \(formatSpeed(gust))")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.orange)
+                HStack(spacing: 2) {
+                    Image(systemName: "wind.circle")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text(formatSpeed(gust))
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                }
+                .foregroundStyle(.orange)
             }
         }
         .frame(width: 80, height: 80)

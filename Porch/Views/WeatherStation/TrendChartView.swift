@@ -35,6 +35,7 @@ struct TrendChartView: View {
     let unitSystem: UnitSystem
     var convertToMetric: ((Double) -> Double)? = nil
     var secondary: SecondarySeries? = nil
+    var showGlass: Bool = true
 
     @EnvironmentObject var manager: WeatherManager
     @State private var timeRange: ChartTimeRange = .day
@@ -215,7 +216,7 @@ struct TrendChartView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .modifier(OptionalGlassModifier(enabled: showGlass))
         .onAppear { loadData() }
         .onDisappear { snapshots = [] }
         .onChange(of: timeRange) { loadData() }
@@ -325,5 +326,18 @@ struct TrendChartView: View {
             result.append((timestamp: bucketTimestamps[midIndex], value: avg))
         }
         return result
+    }
+}
+
+/// Conditionally applies the standard glass effect used by trend charts
+struct OptionalGlassModifier: ViewModifier {
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content.glassEffect(.regular, in: .rect(cornerRadius: 16))
+        } else {
+            content
+        }
     }
 }
