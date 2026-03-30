@@ -120,10 +120,6 @@ class WeatherManager: ObservableObject {
         didSet {
             if let id = selectedStationID {
                 UserDefaults.standard.set(id, forKey: "selectedStationID")
-                // Also save per-source so auto-mode can restore the right station when switching
-                if activeDataSource != .none {
-                    UserDefaults.standard.set(id, forKey: "stationID_\(activeDataSource.rawValue)")
-                }
                 weatherData = allStations[id]
             }
         }
@@ -513,16 +509,19 @@ class WeatherManager: ObservableObject {
     // MARK: - Connection Management
 
     func connect() {
-        // Preserve the user's station selection across reconnection
+        // Preserve the user's station selection for explicit modes only.
+        // Auto mode determines the source dynamically, so station IDs
+        // from a previous source would be stale — let auto-select handle it.
         let savedStationID = selectedStationID
         disconnect()
-        selectedStationID = savedStationID
 
         switch dataSourceMode {
         case .ambientCloud:
+            selectedStationID = savedStationID
             activeDataSource = .ambient
             connectAmbient()
         case .ecowittLocal:
+            selectedStationID = savedStationID
             activeDataSource = .ecowitt
             connectEcowitt()
         case .auto:
@@ -661,16 +660,15 @@ class WeatherManager: ObservableObject {
     // MARK: - Auto Mode
 
     /// Auto mode: probe the Ecowitt gateway first, fall back to Ambient cloud.
+    /// Station selection is handled by auto-select when data arrives.
     private func connectAuto() {
         // If only one source is configured, just use that one
         guard isEcowittConfigured && isConfigured else {
             if isEcowittConfigured {
                 activeDataSource = .ecowitt
-                restoreStationID(for: .ecowitt)
                 connectEcowitt()
             } else if isConfigured {
                 activeDataSource = .ambient
-                restoreStationID(for: .ambient)
                 connectAmbient()
             }
             return
@@ -692,11 +690,9 @@ class WeatherManager: ObservableObject {
 
             if reachable {
                 self.activeDataSource = .ecowitt
-                self.restoreStationID(for: .ecowitt)
                 self.connectEcowitt()
             } else {
                 self.activeDataSource = .ambient
-                self.restoreStationID(for: .ambient)
                 self.connectAmbient()
                 self.startEcowittProbeTimer()
             }
@@ -749,30 +745,37 @@ class WeatherManager: ObservableObject {
         }
     }
 
-    /// Called when the system wakes from sleep. If in auto mode on the cloud source,
-    /// probe the local gateway and switch back if reachable.
+    /// Called when the system wakes from sleep. Always re-probe the local gateway
+    /// and switch to the best available source, regardless of current state.
     private func handleSystemWake() {
-        guard dataSourceMode == .auto,
-              activeDataSource == .ambient,
-              isEcowittConfigured else { return }
+        guard dataSourceMode == .auto, isEcowittConfigured else { return }
 
         Task { [weak self] in
             // Brief delay to let the network interface come back up
             try? await Task.sleep(for: .seconds(3))
-            guard let self, self.dataSourceMode == .auto, self.activeDataSource == .ambient else { return }
+            guard let self, self.dataSourceMode == .auto else { return }
 
-            let reachable = await self.probeEcowittGateway()
-            if reachable {
+            var reachable = await self.probeEcowittGateway()
+
+            // Retry once — network may still be initializing after wake
+            if !reachable {
+                try? await Task.sleep(for: .seconds(2))
+                reachable = await self.probeEcowittGateway()
+            }
+
+            if reachable && self.activeDataSource != .ecowitt {
                 self.switchAutoSource(to: .ecowitt)
+            } else if !reachable && self.activeDataSource != .ambient && self.isConfigured {
+                self.switchAutoSource(to: .ambient)
             }
         }
     }
 
     /// Tear down the current data source and connect to the other one (auto mode only).
+    /// Station selection is left to auto-select when data arrives from the new source.
     private func switchAutoSource(to newSource: ActiveSource) {
         tearDownCurrentSource()
         activeDataSource = newSource
-        restoreStationID(for: newSource)
 
         switch newSource {
         case .ecowitt:
@@ -784,15 +787,6 @@ class WeatherManager: ObservableObject {
             startEcowittProbeTimer()
         case .none:
             break
-        }
-    }
-
-    /// Restore the last known station ID for a given data source.
-    /// Only overwrites if a per-source ID was previously saved; otherwise
-    /// keeps the current value (which may have been restored from the global key).
-    private func restoreStationID(for source: ActiveSource) {
-        if let sourceID = UserDefaults.standard.string(forKey: "stationID_\(source.rawValue)") {
-            selectedStationID = sourceID
         }
     }
 
