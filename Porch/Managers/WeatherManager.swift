@@ -120,6 +120,10 @@ class WeatherManager: ObservableObject {
         didSet {
             if let id = selectedStationID {
                 UserDefaults.standard.set(id, forKey: "selectedStationID")
+                // Also save per-source so auto-mode can restore the right station when switching
+                if activeDataSource != .none {
+                    UserDefaults.standard.set(id, forKey: "stationID_\(activeDataSource.rawValue)")
+                }
                 weatherData = allStations[id]
             }
         }
@@ -662,9 +666,11 @@ class WeatherManager: ObservableObject {
         guard isEcowittConfigured && isConfigured else {
             if isEcowittConfigured {
                 activeDataSource = .ecowitt
+                restoreStationID(for: .ecowitt)
                 connectEcowitt()
             } else if isConfigured {
                 activeDataSource = .ambient
+                restoreStationID(for: .ambient)
                 connectAmbient()
             }
             return
@@ -674,14 +680,23 @@ class WeatherManager: ObservableObject {
         activeDataSource = .none
 
         Task { [weak self] in
-            let reachable = await self?.probeEcowittGateway() ?? false
+            var reachable = await self?.probeEcowittGateway() ?? false
+
+            // Retry once after a brief delay (covers app relaunch timing)
+            if !reachable {
+                try? await Task.sleep(for: .seconds(2))
+                reachable = await self?.probeEcowittGateway() ?? false
+            }
+
             guard let self, self.dataSourceMode == .auto else { return }
 
             if reachable {
                 self.activeDataSource = .ecowitt
+                self.restoreStationID(for: .ecowitt)
                 self.connectEcowitt()
             } else {
                 self.activeDataSource = .ambient
+                self.restoreStationID(for: .ambient)
                 self.connectAmbient()
                 self.startEcowittProbeTimer()
             }
@@ -757,6 +772,7 @@ class WeatherManager: ObservableObject {
     private func switchAutoSource(to newSource: ActiveSource) {
         tearDownCurrentSource()
         activeDataSource = newSource
+        restoreStationID(for: newSource)
 
         switch newSource {
         case .ecowitt:
@@ -768,6 +784,15 @@ class WeatherManager: ObservableObject {
             startEcowittProbeTimer()
         case .none:
             break
+        }
+    }
+
+    /// Restore the last known station ID for a given data source.
+    /// Only overwrites if a per-source ID was previously saved; otherwise
+    /// keeps the current value (which may have been restored from the global key).
+    private func restoreStationID(for source: ActiveSource) {
+        if let sourceID = UserDefaults.standard.string(forKey: "stationID_\(source.rawValue)") {
+            selectedStationID = sourceID
         }
     }
 
