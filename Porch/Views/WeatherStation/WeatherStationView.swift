@@ -142,8 +142,6 @@ struct WeatherStationView: View {
                             }
                         }
 
-                        // Fixed: Weekly Extremes
-                        WeeklyExtremesPanel()
                     }
                     .frame(maxWidth: .infinity)
 
@@ -153,6 +151,7 @@ struct WeatherStationView: View {
                         WindRosePanel()
                         IndoorPanel(observation: data.observation)
                         EnvironmentPanel(observation: data.observation)
+                        WeeklyExtremesPanel()
                         LeakDetectionPanel(observation: data.observation)
                         RelayStatusPanel(observation: data.observation)
                         GardenPanel(observation: data.observation)

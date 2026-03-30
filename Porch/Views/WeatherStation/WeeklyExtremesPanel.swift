@@ -15,20 +15,21 @@ struct WeeklyExtremesPanel: View {
 
     var body: some View {
         if !manager.extremesHistory.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
                 // Header
-                HStack {
+                HStack(spacing: 6) {
                     Image(systemName: "calendar")
+                        .font(.caption)
                         .foregroundStyle(.orange)
                     Text("Weekly Extremes")
-                        .font(.subheadline.weight(.semibold))
+                        .font(.caption.weight(.semibold))
                     Spacer()
                 }
 
                 // Column headers
                 HStack(spacing: 0) {
                     Text("Day")
-                        .frame(width: 40, alignment: .leading)
+                        .frame(width: 32, alignment: .leading)
                     Text("High")
                         .frame(maxWidth: .infinity)
                     Text("Low")
@@ -36,7 +37,7 @@ struct WeeklyExtremesPanel: View {
                     Text("Wind")
                         .frame(maxWidth: .infinity)
                 }
-                .font(.caption2)
+                .font(.system(size: 9))
                 .foregroundStyle(.white.opacity(0.4))
 
                 Divider().opacity(0.2)
@@ -44,62 +45,62 @@ struct WeeklyExtremesPanel: View {
                 ForEach(manager.extremesHistory.reversed()) { record in
                     HStack(spacing: 0) {
                         Text(shortDay(record.date))
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(.white.opacity(0.6))
-                            .frame(width: 40, alignment: .leading)
+                            .frame(width: 32, alignment: .leading)
 
                         if let hi = record.highTemp {
-                            HStack(spacing: 2) {
+                            HStack(spacing: 1) {
                                 Image(systemName: "arrow.up")
-                                    .font(.system(size: 8))
+                                    .font(.system(size: 7))
                                 Text(formatTemp(hi))
                             }
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(.red)
                             .frame(maxWidth: .infinity)
                         } else {
                             Text("—")
-                                .font(.caption)
+                                .font(.caption2)
                                 .foregroundStyle(.white.opacity(0.2))
                                 .frame(maxWidth: .infinity)
                         }
 
                         if let lo = record.lowTemp {
-                            HStack(spacing: 2) {
+                            HStack(spacing: 1) {
                                 Image(systemName: "arrow.down")
-                                    .font(.system(size: 8))
+                                    .font(.system(size: 7))
                                 Text(formatTemp(lo))
                             }
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(.cyan)
                             .frame(maxWidth: .infinity)
                         } else {
                             Text("—")
-                                .font(.caption)
+                                .font(.caption2)
                                 .foregroundStyle(.white.opacity(0.2))
                                 .frame(maxWidth: .infinity)
                         }
 
                         if let wind = record.highWind {
-                            HStack(spacing: 2) {
+                            HStack(spacing: 1) {
                                 Image(systemName: "wind")
-                                    .font(.system(size: 8))
+                                    .font(.system(size: 7))
                                 Text(formatWind(wind))
                             }
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(.teal)
                             .frame(maxWidth: .infinity)
                         } else {
                             Text("—")
-                                .font(.caption)
+                                .font(.caption2)
                                 .foregroundStyle(.white.opacity(0.2))
                                 .frame(maxWidth: .infinity)
                         }
                     }
                 }
             }
-            .padding(16)
-            .glassEffect(.regular, in: .rect(cornerRadius: 16))
+            .padding(12)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
         }
     }
 
