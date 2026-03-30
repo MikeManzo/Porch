@@ -28,6 +28,28 @@ struct GeneralSettingsTab: View {
             }
 
             Section {
+                if appUpdater.updateAvailable {
+                    HStack(spacing: 12) {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(.green)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Update Available")
+                                .font(.subheadline.weight(.semibold))
+                            Text("A new version of Porch is ready to install.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Install Update") {
+                            appUpdater.checkForUpdates()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                    }
+                    .padding(.vertical, 4)
+                }
+
                 Button {
                     appUpdater.checkForUpdates()
                 } label: {

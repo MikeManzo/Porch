@@ -42,6 +42,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
 }
 
 struct SettingsView: View {
+    @EnvironmentObject var appUpdater: AppUpdater
     @State private var selectedPane: SettingsPane = .display
 
     var body: some View {
@@ -60,6 +61,13 @@ struct SettingsView: View {
 
                         Text(pane.rawValue)
                             .font(.subheadline.weight(.medium))
+
+                        if pane == .general && appUpdater.updateAvailable {
+                            Spacer()
+                            Circle()
+                                .fill(.green)
+                                .frame(width: 8, height: 8)
+                        }
                     }
                     .tag(pane)
                 }

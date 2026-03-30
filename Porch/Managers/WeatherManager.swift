@@ -509,8 +509,10 @@ class WeatherManager: ObservableObject {
     // MARK: - Connection Management
 
     func connect() {
-        // Tear down any existing connection
+        // Preserve the user's station selection across reconnection
+        let savedStationID = selectedStationID
         disconnect()
+        selectedStationID = savedStationID
 
         switch dataSourceMode {
         case .ambientCloud:
