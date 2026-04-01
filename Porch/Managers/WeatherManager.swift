@@ -9,6 +9,7 @@ import SwiftUI
 import Combine
 import AmbientWeather
 import EcowittLocal
+import PorchStationKit
 import UserNotifications
 import WeatherKit
 import CoreLocation
@@ -211,6 +212,26 @@ class WeatherManager: ObservableObject {
     @Published var dataSourceMode: DataSourceMode = DataSourceMode(rawValue: UserDefaults.standard.string(forKey: "dataSourceMode") ?? "") ?? .auto {
         didSet { UserDefaults.standard.set(dataSourceMode.rawValue, forKey: "dataSourceMode") }
     }
+
+    /// The selected station brand in the settings UI
+    @Published var selectedBrand: StationBrand = StationBrand(rawValue: UserDefaults.standard.string(forKey: "selectedBrand") ?? "") ?? .ecowitt {
+        didSet { UserDefaults.standard.set(selectedBrand.rawValue, forKey: "selectedBrand") }
+    }
+
+    /// Generic configuration values for brands beyond Ecowitt/Ambient.
+    /// Keyed by ConfigurationField.id, persisted as JSON.
+    @Published var brandConfigValues: [String: String] = {
+        guard let data = UserDefaults.standard.data(forKey: "brandConfigValues"),
+              let dict = try? JSONDecoder().decode([String: String].self, from: data)
+        else { return [:] }
+        return dict
+    }() {
+        didSet {
+            if let data = try? JSONEncoder().encode(brandConfigValues) {
+                UserDefaults.standard.set(data, forKey: "brandConfigValues")
+            }
+        }
+    }
     @Published var ecowittHost: String = UserDefaults.standard.string(forKey: "ecowittHost") ?? "" {
         didSet { UserDefaults.standard.set(ecowittHost, forKey: "ecowittHost") }
     }
@@ -333,6 +354,17 @@ class WeatherManager: ObservableObject {
         )
     }
 
+    // MARK: - Station Adapter (New Multi-Station System)
+
+    /// The latest PorchWeatherData from the active adapter (canonical model)
+    @Published private(set) var porchWeatherData: PorchWeatherData?
+
+    /// The currently active station adapter instance
+    private var activeAdapter: (any StationAdapter)?
+    /// Tasks watching adapter streams
+    private var adapterObservationTask: Task<Void, Never>?
+    private var adapterStatusTask: Task<Void, Never>?
+
     // MARK: - Private
 
     private var socket: AmbientWebSocket?
@@ -391,6 +423,9 @@ class WeatherManager: ObservableObject {
         if UserDefaults.standard.object(forKey: "highCO2Alert") == nil { highCO2Alert = 1000 }
         if UserDefaults.standard.object(forKey: "severeWeatherAlertEnabled") == nil { severeWeatherAlertEnabled = true }
 
+        // Register station adapters
+        registerStationAdapters()
+
         // Register notification actions and delegate (must happen before sending any notifications)
         registerNotificationCategory()
         notificationDelegate.manager = self
@@ -442,11 +477,32 @@ class WeatherManager: ObservableObject {
 
     /// The string displayed in the macOS menubar
     var menuBarLabel: String {
+        // Prefer PorchWeatherData when available
+        if let porchData = porchWeatherData {
+            // Map legacy Ambient sensor keys to PorchWeatherData keys for the menu bar
+            let porchKey = Self.ambientToPorchKeyMap[selectedSensorKey] ?? selectedSensorKey
+            let result = SensorFormatter.menuBarString(for: porchKey, from: porchData, unitSystem: unitSystem)
+            if result != "--" { return result }
+        }
         guard let data = weatherData else {
             return connectionStatus == .connecting ? "..." : "--"
         }
         return SensorFormatter.menuBarString(for: selectedSensorKey, from: data.observation, unitSystem: unitSystem)
     }
+
+    /// Maps legacy AmbientLastData sensor keys to PorchWeatherData sensor keys
+    static let ambientToPorchKeyMap: [String: String] = [
+        "tempF": "temperatureF",
+        "tempInF": "indoorTempF",
+        "feelsLike": "feelsLikeF",
+        "dewPoint": "dewPointF",
+        "baromRelIn": "pressureRelativeInHg",
+        "baromAbsIn": "pressureAbsoluteInHg",
+        "hourlyRainIn": "rainRateInPerHr",
+        "maxDailyGust": "maxDailyGustMPH",
+        "uv": "uvIndex",
+        "lightningDistance": "lightningDistanceMi",
+    ]
 
     /// The SF Symbol displayed in the macOS menubar
     var menuBarIcon: String {
@@ -461,9 +517,22 @@ class WeatherManager: ObservableObject {
         return category.iconName
     }
 
-    /// Categorized non-nil sensors from the connected station
-    var sensorsByCategory: [(SensorCategory, [String])] {
+    /// Categorized non-nil sensors from the connected station (legacy Ambient format)
+    var sensorsByCategory: [(AmbientWeather.SensorCategory, [String])] {
         weatherData?.observation.availableSensorsbyCategorySorted ?? []
+    }
+
+    /// Categorized sensors using PorchWeatherData (new system)
+    var porchSensorsByCategory: [(PorchStationKit.SensorCategory, [String])] {
+        porchWeatherData?.availableSensorsByCategory ?? []
+    }
+
+    /// Total sensor count (prefers PorchWeatherData)
+    var activeSensorCount: Int {
+        if let porch = porchWeatherData {
+            return porch.availableSensorKeys.count
+        }
+        return sensorsByCategory.flatMap(\.1).count
     }
 
     /// Station name, if connected
@@ -509,6 +578,14 @@ class WeatherManager: ObservableObject {
     // MARK: - Connection Management
 
     func connect() {
+        // For brands beyond Ecowitt/Ambient, use the generic adapter path
+        if selectedBrand != .ecowitt && selectedBrand != .ambient {
+            disconnect()
+            connectGenericBrand()
+            startWeatherKitPolling()
+            return
+        }
+
         // Preserve the user's station selection for explicit modes only.
         // Auto mode determines the source dynamically, so station IDs
         // from a previous source would be stale — let auto-select handle it.
@@ -532,113 +609,75 @@ class WeatherManager: ObservableObject {
         startWeatherKitPolling()
     }
 
+    /// Connect using the generic adapter pattern for any registered brand.
+    private func connectGenericBrand() {
+        let brand = selectedBrand
+        let connectionTypes = brand.supportedConnectionTypes
+        guard let connType = connectionTypes.first,
+              let adapter = StationRegistry.shared.createAdapter(brand: brand, connectionType: connType)
+        else { return }
+
+        // Build StationConfiguration from stored brandConfigValues
+        let fields = StationRegistry.shared.configurationFields(brand: brand, connectionType: connType)
+        var config = StationConfiguration()
+        for field in fields {
+            let value = brandConfigValues[field.id] ?? ""
+            switch field.id {
+            case "host": config.host = value
+            case "port": config.port = Int(value)
+            case "apiKey": config.apiKey = value
+            case "applicationKey": config.applicationKey = value
+            case "accessToken": config.accessToken = value
+            case "deviceID": config.deviceID = value
+            case "latitude": config.latitude = Double(value)
+            case "longitude": config.longitude = Double(value)
+            case "stationName": config.stationName = value
+            default: break
+            }
+        }
+
+        startObservingAdapter(adapter)
+
+        Task {
+            try? await adapter.connect(configuration: config)
+        }
+    }
+
     private func connectAmbient() {
         guard isConfigured else { return }
 
-        let ws = AmbientWebSocket(applicationKey: applicationKey)
-        self.socket = ws
+        guard let adapter = StationRegistry.shared.createAdapter(brand: .ambient, connectionType: .cloud) else { return }
 
-        ws.$connectionStatus
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] status in
-                self?.connectionStatus = status
-            }
-            .store(in: &sourceCancellables)
+        let config = StationConfiguration(
+            apiKey: apiKeysRaw,
+            applicationKey: applicationKey
+        )
 
-        ws.$weatherData
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] data in
-                guard let self, let data else { return }
-                // Store in multi-station dictionary
-                let stationID = data.stationID
-                self.allStations[stationID] = data
+        startObservingAdapter(adapter)
 
-                // Auto-select first station if none selected
-                if self.selectedStationID == nil {
-                    self.selectedStationID = stationID
-                }
-
-                // Update active weather data if this is the selected station
-                if stationID == self.selectedStationID {
-                    self.weatherData = data
-                    self.processNewObservation(data.observation)
-                }
-            }
-            .store(in: &sourceCancellables)
-
-        ws.$connectionError
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] error in
-                self?.connectionError = error
-            }
-            .store(in: &sourceCancellables)
-
-        ws.connectStations(apiKeys: apiKeys)
+        Task {
+            try? await adapter.connect(configuration: config)
+        }
     }
 
     private func connectEcowitt() {
         guard isEcowittConfigured else { return }
 
-        let client = EcowittClient()
-        self.ecowittClient = client
+        guard let adapter = StationRegistry.shared.createAdapter(brand: .ecowitt, connectionType: .local) else { return }
 
-        // Map Ecowitt connection status → SocketStatus
-        client.$connectionStatus
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] status in
-                guard let self else { return }
-                switch status {
-                case .connected: self.connectionStatus = .connected
-                case .connecting: self.connectionStatus = .connecting
-                case .disconnected:
-                    // In auto mode, fail over to Ambient — but only if we had an established
-                    // connection that was lost, not during the transient .disconnected state
-                    // that EcowittClient publishes when connect() internally calls disconnect().
-                    if self.connectionStatus == .connected && self.dataSourceMode == .auto && self.activeDataSource == .ecowitt && self.isConfigured {
-                        self.switchAutoSource(to: .ambient)
-                    } else if self.dataSourceMode != .auto || self.activeDataSource != .ecowitt {
-                        self.connectionStatus = .disconnected
-                    }
-                }
-            }
-            .store(in: &sourceCancellables)
+        let config = StationConfiguration(
+            host: ecowittHost,
+            port: ecowittPort,
+            latitude: Double(manualLatitude),
+            longitude: Double(manualLongitude),
+            stationName: ecowittStationName.isEmpty ? "Ecowitt Gateway" : ecowittStationName
+        )
 
-        // Map Ecowitt errors
-        client.$connectionError
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] error in
-                self?.connectionError = error
-            }
-            .store(in: &sourceCancellables)
+        startObservingAdapter(adapter)
 
-        // Convert each Ecowitt update to full AmbientWeatherData and process
-        client.$liveData
-            .compactMap { $0 }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] ecowittData in
-                guard let self else { return }
-                let lat = Double(self.manualLatitude)
-                let lon = Double(self.manualLongitude)
-                guard let data = EcowittAdapter.toAmbientWeatherData(
-                    from: ecowittData,
-                    latitude: lat,
-                    longitude: lon,
-                    stationName: self.ecowittStationName.isEmpty ? "Ecowitt Gateway" : self.ecowittStationName
-                ) else { return }
-
-                let stationID = data.stationID
-                self.allStations[stationID] = data
-                if self.selectedStationID == nil {
-                    self.selectedStationID = stationID
-                }
-                if stationID == self.selectedStationID {
-                    self.weatherData = data
-                    self.processNewObservation(data.observation)
-                }
-            }
-            .store(in: &sourceCancellables)
-
-        client.connect(host: ecowittHost, port: ecowittPort)
+        Task {
+            try? await adapter.connect(configuration: config)
+        }
 
         // Reverse geocode coordinates into a place name
         if let lat = Double(manualLatitude), let lon = Double(manualLongitude) {
@@ -794,11 +833,13 @@ class WeatherManager: ObservableObject {
     /// the WeatherKit timer, probe timer, or overall connection state.
     private func tearDownCurrentSource() {
         sourceCancellables.removeAll()
+        stopAdapterTasks()
         socket?.disconnectStations()
         socket = nil
         ecowittClient?.disconnect()
         ecowittClient = nil
         weatherData = nil
+        porchWeatherData = nil
         connectionError = nil
         allStations.removeAll()
         selectedStationID = nil
@@ -817,14 +858,128 @@ class WeatherManager: ObservableObject {
         socket = nil
         ecowittClient?.disconnect()
         ecowittClient = nil
+        stopAdapterTasks()
         forecastManager?.reset()
         connectionStatus = .disconnected
         activeDataSource = .none
         weatherData = nil
+        porchWeatherData = nil
         connectionError = nil
         allStations.removeAll()
         selectedStationID = nil
         reverseGeocodedLocation = ""
+    }
+
+    // MARK: - Station Adapter System
+
+    /// Register all shipped station adapters at launch
+    private func registerStationAdapters() {
+        StationRegistry.shared.register(EcowittLocalAdapter.self) { @Sendable in
+            MainActor.assumeIsolated { EcowittLocalAdapter() }
+        }
+        StationRegistry.shared.register(AmbientCloudAdapter.self) { @Sendable in
+            MainActor.assumeIsolated { AmbientCloudAdapter() }
+        }
+        StationRegistry.shared.register(DavisCloudAdapter.self) { @Sendable in
+            MainActor.assumeIsolated { DavisCloudAdapter() }
+        }
+        StationRegistry.shared.register(TempestCloudAdapter.self) { @Sendable in
+            MainActor.assumeIsolated { TempestCloudAdapter() }
+        }
+        StationRegistry.shared.register(AcuRiteCloudAdapter.self) { @Sendable in
+            MainActor.assumeIsolated { AcuRiteCloudAdapter() }
+        }
+        StationRegistry.shared.register(LaCrosseCloudAdapter.self) { @Sendable in
+            MainActor.assumeIsolated { LaCrosseCloudAdapter() }
+        }
+    }
+
+    /// The list of brands available for connection
+    var availableBrands: [StationBrand] {
+        StationRegistry.shared.availableBrands
+    }
+
+    /// Stop any running adapter observation tasks
+    private func stopAdapterTasks() {
+        adapterObservationTask?.cancel()
+        adapterObservationTask = nil
+        adapterStatusTask?.cancel()
+        adapterStatusTask = nil
+        activeAdapter?.disconnect()
+        activeAdapter = nil
+    }
+
+    /// Start observing an adapter's data and status streams.
+    /// Converts PorchWeatherData → AmbientWeatherData via the bridge for backward compatibility.
+    private func startObservingAdapter(_ adapter: any StationAdapter) {
+        activeAdapter = adapter
+
+        // Watch observations
+        adapterObservationTask = Task { [weak self] in
+            for await porchData in adapter.observations {
+                guard let self else { return }
+                await MainActor.run {
+                    self.porchWeatherData = porchData
+
+                    // Bridge to AmbientWeatherData for existing views
+                    guard let ambientData = WeatherDataBridge.toAmbientWeatherData(from: porchData) else { return }
+
+                    let stationID = ambientData.stationID
+                    self.allStations[stationID] = ambientData
+
+                    if self.selectedStationID == nil {
+                        self.selectedStationID = stationID
+                    }
+                    if stationID == self.selectedStationID {
+                        self.weatherData = ambientData
+                        self.processNewObservation(ambientData.observation)
+                    }
+
+                    // Also save directly from PorchWeatherData (no bridge needed)
+                    self.historyManager?.saveSnapshot(from: porchData)
+                }
+            }
+        }
+
+        // Watch status
+        adapterStatusTask = Task { [weak self] in
+            for await status in adapter.connectionStatusStream {
+                guard let self else { return }
+                await MainActor.run {
+                    switch status {
+                    case .connected:
+                        self.connectionStatus = .connected
+                        self.connectionError = nil
+                    case .connecting:
+                        self.connectionStatus = .connecting
+                    case .disconnected:
+                        // Auto-mode failover: if we lost an established local connection,
+                        // switch to cloud. Skip transient disconnects during initial connect.
+                        if self.connectionStatus == .connected
+                            && self.dataSourceMode == .auto
+                            && self.activeDataSource == .ecowitt
+                            && self.isConfigured {
+                            self.switchAutoSource(to: .ambient)
+                        } else {
+                            self.connectionStatus = .disconnected
+                        }
+                    case .failed(let reason):
+                        self.connectionError = NSError(
+                            domain: "Porch", code: -1,
+                            userInfo: [NSLocalizedDescriptionKey: reason]
+                        )
+                        // Auto-mode failover on failure
+                        if self.dataSourceMode == .auto
+                            && self.activeDataSource == .ecowitt
+                            && self.isConfigured {
+                            self.switchAutoSource(to: .ambient)
+                        } else {
+                            self.connectionStatus = .disconnected
+                        }
+                    }
+                }
+            }
+        }
     }
 
     func autoConnectIfNeeded() {

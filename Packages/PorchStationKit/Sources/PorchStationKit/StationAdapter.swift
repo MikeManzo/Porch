@@ -63,6 +63,7 @@ public struct ConfigurationField: Sendable, Identifiable {
 /// - Describing what configuration it needs
 /// - Optionally discovering stations on the network or in a cloud account
 /// - Connecting to the station and streaming observations as `PorchWeatherData`
+@MainActor
 public protocol StationAdapter: AnyObject, Sendable {
 
     // MARK: - Identity

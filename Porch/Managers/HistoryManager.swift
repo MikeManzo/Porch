@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import AmbientWeather
+import PorchStationKit
 
 /// Manages historical weather data storage using SwiftData
 @MainActor
@@ -63,6 +64,39 @@ class HistoryManager {
         pruneOldData()
 
         // Explicit save to flush the in-memory object graph and prevent unbounded growth
+        try? modelContext.save()
+    }
+
+    /// Save a snapshot from PorchWeatherData (new adapter system)
+    func saveSnapshot(from data: PorchWeatherData) {
+        let now = Date()
+
+        if let last = lastSaveTime, now.timeIntervalSince(last) < saveInterval {
+            return
+        }
+        lastSaveTime = now
+
+        let snapshot = WeatherSnapshot(timestamp: now, stationID: data.stationID)
+
+        snapshot.temperature = data.temperatureF
+        snapshot.humidity = data.humidity
+        snapshot.feelsLike = data.feelsLikeF
+        snapshot.dewPoint = data.dewPointF
+        snapshot.windSpeed = data.windSpeedMPH
+        snapshot.windGust = data.windGustMPH
+        snapshot.windDirection = data.windDirection
+        snapshot.pressure = data.pressureRelativeInHg
+        snapshot.dailyRain = data.dailyRainIn
+        snapshot.hourlyRain = data.rainRateInPerHr
+        snapshot.solarRadiation = data.solarRadiation
+        snapshot.uv = data.uvIndex
+        snapshot.pm25 = data.pm25
+        snapshot.co2 = data.co2
+        snapshot.indoorTemp = data.indoorTempF
+        snapshot.indoorHumidity = data.indoorHumidity
+
+        modelContext.insert(snapshot)
+        pruneOldData()
         try? modelContext.save()
     }
 

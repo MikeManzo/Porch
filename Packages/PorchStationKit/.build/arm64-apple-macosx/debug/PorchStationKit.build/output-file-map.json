@@ -1,0 +1,68 @@
+{
+  "": {
+    "swift-dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/primary.swiftdeps"
+  },
+  "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/ConnectionStatus.swift": {
+    "dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/ConnectionStatus.d",
+    "object": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/ConnectionStatus.swift.o",
+    "swiftmodule": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/ConnectionStatus~partial.swiftmodule",
+    "swift-dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/ConnectionStatus.swiftdeps",
+    "diagnostics": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/ConnectionStatus.dia"
+  },
+  "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/PorchWeatherData+Sensors.swift": {
+    "dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData+Sensors.d",
+    "object": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData+Sensors.swift.o",
+    "swiftmodule": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData+Sensors~partial.swiftmodule",
+    "swift-dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData+Sensors.swiftdeps",
+    "diagnostics": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData+Sensors.dia"
+  },
+  "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/PorchWeatherData.swift": {
+    "dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData.d",
+    "object": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData.swift.o",
+    "swiftmodule": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData~partial.swiftmodule",
+    "swift-dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData.swiftdeps",
+    "diagnostics": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData.dia"
+  },
+  "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/SensorCategory.swift": {
+    "dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/SensorCategory.d",
+    "object": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/SensorCategory.swift.o",
+    "swiftmodule": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/SensorCategory~partial.swiftmodule",
+    "swift-dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/SensorCategory.swiftdeps",
+    "diagnostics": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/SensorCategory.dia"
+  },
+  "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationAdapter.swift": {
+    "dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationAdapter.d",
+    "object": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationAdapter.swift.o",
+    "swiftmodule": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationAdapter~partial.swiftmodule",
+    "swift-dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationAdapter.swiftdeps",
+    "diagnostics": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationAdapter.dia"
+  },
+  "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationBrand.swift": {
+    "dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationBrand.d",
+    "object": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationBrand.swift.o",
+    "swiftmodule": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationBrand~partial.swiftmodule",
+    "swift-dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationBrand.swiftdeps",
+    "diagnostics": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationBrand.dia"
+  },
+  "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationConfiguration.swift": {
+    "dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationConfiguration.d",
+    "object": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationConfiguration.swift.o",
+    "swiftmodule": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationConfiguration~partial.swiftmodule",
+    "swift-dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationConfiguration.swiftdeps",
+    "diagnostics": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationConfiguration.dia"
+  },
+  "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationModel.swift": {
+    "dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationModel.d",
+    "object": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationModel.swift.o",
+    "swiftmodule": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationModel~partial.swiftmodule",
+    "swift-dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationModel.swiftdeps",
+    "diagnostics": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationModel.dia"
+  },
+  "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationRegistry.swift": {
+    "dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationRegistry.d",
+    "object": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationRegistry.swift.o",
+    "swiftmodule": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationRegistry~partial.swiftmodule",
+    "swift-dependencies": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationRegistry.swiftdeps",
+    "diagnostics": "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationRegistry.dia"
+  }
+}

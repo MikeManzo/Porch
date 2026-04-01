@@ -220,10 +220,25 @@ final class AmbientCloudAdapter: StationAdapter, @unchecked Sendable {
         if let v = obs.leak4 { data.leakDetected[4] = v == 1 }
 
         // Battery status
+        // Ambient uses 0 = low, 1 = ok for most sensors; lightning is inverted (1 = low)
         if let v = obs.battOut { data.batteries["outdoor"] = v == 0 ? .low : .ok }
         if let v = obs.battIn { data.batteries["indoor"] = v == 0 ? .low : .ok }
         if let v = obs.battLightning { data.batteries["lightning"] = v == 1 ? .low : .ok }
         if let v = obs.batt_co2 { data.batteries["co2"] = v == 0 ? .low : .ok }
+        if let v = obs.battRain { data.batteries["rain"] = v == "0" ? .low : .ok }
+        if let v = obs.batt_cellgateway { data.batteries["cellgateway"] = v == 0 ? .low : .ok }
+
+        // Soil moisture sensor batteries
+        if let v = obs.battsm1 { data.batteries["soil1"] = v == 0 ? .low : .ok }
+        if let v = obs.battsm2 { data.batteries["soil2"] = v == 0 ? .low : .ok }
+        if let v = obs.battsm3 { data.batteries["soil3"] = v == 0 ? .low : .ok }
+        if let v = obs.battsm4 { data.batteries["soil4"] = v == 0 ? .low : .ok }
+
+        // Leak sensor batteries
+        if let v = obs.batleak1 { data.batteries["leak1"] = v == 0 ? .low : .ok }
+        if let v = obs.batleak2 { data.batteries["leak2"] = v == 0 ? .low : .ok }
+        if let v = obs.batleak3 { data.batteries["leak3"] = v == 0 ? .low : .ok }
+        if let v = obs.batleak4 { data.batteries["leak4"] = v == 0 ? .low : .ok }
 
         return data
     }

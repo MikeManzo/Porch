@@ -119,6 +119,12 @@ struct WeatherDataBridge {
         }
 
         // Battery mappings
+        if let status = porch.batteries["outdoor"] {
+            dict["battout"] = status.isLow ? 0 : 1
+        }
+        if let status = porch.batteries["indoor"] {
+            dict["battin"] = status.isLow ? 0 : 1
+        }
         if let status = porch.batteries["rain"] {
             dict["battrain"] = status.isLow ? "0" : "1"
         }
@@ -127,6 +133,9 @@ struct WeatherDataBridge {
         }
         if let status = porch.batteries["co2"] {
             dict["batt_co2"] = status.isLow ? 0 : 1
+        }
+        if let status = porch.batteries["cellgateway"] {
+            dict["batt_cellgateway"] = status.isLow ? 0 : 1
         }
         for ch in 1...4 {
             if let status = porch.batteries["leak\(ch)"] {

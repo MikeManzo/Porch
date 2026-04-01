@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AmbientWeather
+import PorchStationKit
 
 struct MenuBarPopoverView: View {
     @EnvironmentObject var manager: WeatherManager
@@ -238,10 +239,10 @@ struct MenuBarPopoverView: View {
     /// Creates a minimal PorchWeatherData from AmbientWeatherData when no porchWeatherData exists
     private func makeFallbackPorchData(from data: AmbientWeatherData) -> PorchWeatherData {
         var porch = PorchWeatherData(
-            stationID: data.macAddress ?? "--",
+            stationID: manager.weatherData?.stationID ?? "--",
             stationName: data.info.name,
             brand: .ambient,
-            timestamp: data.observation.date ?? Date()
+            timestamp: Date()
         )
         porch.temperatureF = data.observation.tempF
         porch.feelsLikeF = data.observation.feelsLike

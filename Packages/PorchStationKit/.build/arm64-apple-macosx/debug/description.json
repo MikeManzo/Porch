@@ -1,0 +1,343 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.PorchStationKit-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/sources",
+      "importPath" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/ConnectionStatus.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/PorchWeatherData+Sensors.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/PorchWeatherData.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/SensorCategory.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationAdapter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationBrand.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationConfiguration.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationRegistry.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/swift-version-39B54973F684ADAB.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "PorchStationKit",
+      "moduleOutputPath" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/Modules/PorchStationKit.swiftmodule",
+      "objects" : [
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/ConnectionStatus.swift.o",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData+Sensors.swift.o",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData.swift.o",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/SensorCategory.swift.o",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationAdapter.swift.o",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationBrand.swift.o",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationConfiguration.swift.o",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationModel.swift.o",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationRegistry.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j14",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/include/PorchStationKit-Swift.h",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-F",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "porchstationkit"
+      ],
+      "outputFileMapPath" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/ConnectionStatus.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData+Sensors.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/PorchWeatherData.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/SensorCategory.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationAdapter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationBrand.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationConfiguration.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/StationRegistry.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/Modules/PorchStationKit.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/ConnectionStatus.swift",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/PorchWeatherData+Sensors.swift",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/PorchWeatherData.swift",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/SensorCategory.swift",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationAdapter.swift",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationBrand.swift",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationConfiguration.swift",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationModel.swift",
+        "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationRegistry.swift"
+      ],
+      "tempsPath" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "PorchStationKit" : [
+      "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "PorchStationKit",
+      "-package-name",
+      "porchstationkit",
+      "-c",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/ConnectionStatus.swift",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/PorchWeatherData+Sensors.swift",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/PorchWeatherData.swift",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/SensorCategory.swift",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationAdapter.swift",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationBrand.swift",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationConfiguration.swift",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationModel.swift",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationRegistry.swift",
+      "-I",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j14",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/include/PorchStationKit-Swift.h",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-F",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "porchstationkit",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "PorchStationKit" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/ConnectionStatus.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/PorchWeatherData+Sensors.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/PorchWeatherData.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/SensorCategory.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationAdapter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationBrand.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationConfiguration.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/Sources/PorchStationKit/StationRegistry.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/PorchStationKit.build/sources"
+    },
+    "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/swift-version-39B54973F684ADAB.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/mike/Documents/Dev/Porch/Packages/PorchStationKit/.build/arm64-apple-macosx/debug/swift-version-39B54973F684ADAB.txt"
+    }
+  }
+}

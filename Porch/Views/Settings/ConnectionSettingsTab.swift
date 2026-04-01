@@ -140,10 +140,7 @@ struct ConnectionSettingsTab: View {
                     LabeledContent("Location", value: manager.stationLocation)
                     LabeledContent("Station ID", value: manager.weatherData?.stationID ?? "--")
 
-                    let sensorCount = manager.sensorsByCategory
-                        .flatMap(\.1)
-                        .count
-                    LabeledContent("Active Sensors", value: "\(sensorCount)")
+                    LabeledContent("Active Sensors", value: "\(manager.activeSensorCount)")
 
                     if manager.dataSourceMode == .auto {
                         LabeledContent("Source", value: "via \(manager.activeDataSource.rawValue)")

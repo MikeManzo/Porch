@@ -7,6 +7,7 @@
 
 import Foundation
 import AmbientWeather
+import PorchStationKit
 
 /// The unit system for displaying weather data
 enum UnitSystem: String, CaseIterable, Identifiable {
@@ -30,30 +31,39 @@ struct SensorFormatter {
 
     /// Keys whose raw imperial value is a temperature in Fahrenheit
     private static let temperatureKeys: Set<String> = [
+        // AmbientLastData keys
         "tempF", "tempInF", "feelsLike", "feelsLikeIn", "dewPoint", "dewPointIn",
         "soiltemp1f", "soiltemp2f", "soiltemp3f", "soiltemp4f", "soiltemp5f",
-        "soiltemp6f", "soiltemp7f", "soiltemp8f", "soiltemp9f", "soiltemp10f"
+        "soiltemp6f", "soiltemp7f", "soiltemp8f", "soiltemp9f", "soiltemp10f",
+        // PorchWeatherData keys
+        "temperatureF", "indoorTempF", "feelsLikeF", "dewPointF",
+        "soilTempF_1", "soilTempF_2", "soilTempF_3", "soilTempF_4", "soilTempF_5",
+        "soilTempF_6", "soilTempF_7", "soilTempF_8", "soilTempF_9", "soilTempF_10"
     ]
 
     /// Keys whose raw imperial value is wind speed in mph
     private static let windSpeedKeys: Set<String> = [
-        "windSpeedMPH", "windGustMPH", "maxDailyGust"
+        "windSpeedMPH", "windGustMPH", "maxDailyGust",
+        "maxDailyGustMPH"
     ]
 
     /// Keys whose raw imperial value is pressure in inHg
     private static let pressureKeys: Set<String> = [
-        "baromAbsIn", "baromRelIn"
+        "baromAbsIn", "baromRelIn",
+        "pressureRelativeInHg", "pressureAbsoluteInHg"
     ]
 
     /// Keys whose raw imperial value is rain in inches
     private static let rainKeys: Set<String> = [
         "eventRainIn", "dailyRainIn", "weeklyRainIn", "monthlyRainIn",
-        "yearlyRainIn", "hourlyRainIn"
+        "yearlyRainIn", "hourlyRainIn",
+        "rainRateInPerHr"
     ]
 
     /// Keys whose raw imperial value is distance in miles
     private static let distanceKeys: Set<String> = [
-        "lightningDistance"
+        "lightningDistance",
+        "lightningDistanceMi"
     ]
 
     /// Keys whose value is a Unix timestamp in milliseconds
@@ -118,9 +128,10 @@ struct SensorFormatter {
         if unitSystem == .metric {
             return metricSensorDescriptions[sensorKey]
                 ?? AmbientLastData.sensorDescriptions[sensorKey]
-                ?? sensorKey
+                ?? PorchWeatherData.sensorDescription(for: sensorKey)
         }
-        return AmbientLastData.sensorDescriptions[sensorKey] ?? sensorKey
+        return AmbientLastData.sensorDescriptions[sensorKey]
+            ?? PorchWeatherData.sensorDescription(for: sensorKey)
     }
 
     // MARK: - Unit Conversion
@@ -313,7 +324,35 @@ struct SensorFormatter {
                lowered.contains("dewpoint") || lowered.contains("mph") ||
                lowered.contains("kph") || lowered.contains("rain") ||
                lowered.contains("barom") || lowered.contains("solarradiation") ||
-               lowered.contains("gust") || lowered.contains("lightning_distance")
+               lowered.contains("gust") || lowered.contains("lightning") ||
+               lowered.contains("pressure") || lowered.contains("inhg")
+    }
+
+    // MARK: - PorchWeatherData Support
+
+    /// Produces a compact string for the menubar from PorchWeatherData
+    static func menuBarString(for sensorKey: String, from data: PorchWeatherData,
+                              unitSystem: UnitSystem = .imperial) -> String {
+        guard let value = data.sensorValues[sensorKey] else { return "--" }
+        return formatValue(value, forSensor: sensorKey, unitSystem: unitSystem)
+    }
+
+    /// Full display string with label from PorchWeatherData
+    static func displayString(for sensorKey: String, from data: PorchWeatherData,
+                              unitSystem: UnitSystem = .imperial) -> String {
+        let label = sensorDescription(for: sensorKey, unitSystem: unitSystem)
+        guard let value = data.sensorValues[sensorKey] else { return "\(label): --" }
+        return "\(label): \(formatValue(value, forSensor: sensorKey, unitSystem: unitSystem))"
+    }
+
+    /// Raw numeric value from PorchWeatherData
+    static func numericValue(for sensorKey: String, from data: PorchWeatherData,
+                             unitSystem: UnitSystem = .imperial) -> Double? {
+        guard let rawValue = data.numericValue(for: sensorKey) else { return nil }
+        if unitSystem == .metric, let converted = convertToMetric(rawValue, forSensor: sensorKey) {
+            return converted
+        }
+        return rawValue
     }
 
     // MARK: - Metric Sensor Descriptions

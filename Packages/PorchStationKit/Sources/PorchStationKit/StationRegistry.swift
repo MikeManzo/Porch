@@ -43,6 +43,7 @@ public final class StationRegistry: @unchecked Sendable {
     // MARK: - Registration
 
     /// Register a station adapter type. Call once per adapter at app launch.
+    @MainActor
     public func register<T: StationAdapter>(_ adapterType: T.Type, factory: @escaping @Sendable () -> T) {
         lock.lock()
         defer { lock.unlock() }
