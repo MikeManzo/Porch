@@ -60,13 +60,21 @@ struct MenuBarPopoverView: View {
         }
 
         // Hero temperature display
-        WeatherHeroView(observation: data.observation)
+        if let porchData = manager.porchWeatherData {
+            WeatherHeroView(porchData: porchData)
+        } else {
+            WeatherHeroView(porchData: makeFallbackPorchData(from: data))
+        }
 
         // Daily extremes (high/low/gust)
         DailyExtremesView()
 
         // Quick stats bar with Liquid Glass
-        QuickStatsBar(observation: data.observation)
+        if let porchData = manager.porchWeatherData {
+            QuickStatsBar(porchData: porchData)
+        } else {
+            QuickStatsBar(observation: data.observation)
+        }
 
         Divider()
             .padding(.top, 8)
@@ -75,18 +83,35 @@ struct MenuBarPopoverView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 // Common conditions grid
-                ConditionsGridView(observation: data.observation)
+                if let porchData = manager.porchWeatherData {
+                    ConditionsGridView(porchData: porchData)
+                } else {
+                    ConditionsGridView(observation: data.observation)
+                }
 
                 // Rain totals summary
-                RainSummaryView(observation: data.observation)
+                if let porchData = manager.porchWeatherData {
+                    RainSummaryView(porchData: porchData)
+                } else {
+                    RainSummaryView(observation: data.observation)
+                }
 
                 // Garden & soil section (conditional)
-                GardenSectionView(observation: data.observation)
+                if let porchData = manager.porchWeatherData {
+                    GardenSectionView(porchData: porchData)
+                } else {
+                    GardenSectionView(observation: data.observation)
+                }
 
                 // Expandable full sensor list
                 DisclosureGroup(isExpanded: $showAllSensors) {
-                    SensorDashboardView(observation: data.observation)
-                        .padding(.top, 4)
+                    if let porchData = manager.porchWeatherData {
+                        SensorDashboardView(porchData: porchData)
+                            .padding(.top, 4)
+                    } else {
+                        SensorDashboardView(observation: data.observation)
+                            .padding(.top, 4)
+                    }
                 } label: {
                     Label("All Sensors", systemImage: "sensor")
                         .font(.subheadline.weight(.medium))
@@ -206,5 +231,21 @@ struct MenuBarPopoverView: View {
         .font(.body)
         .padding(.horizontal, 12)
         .padding(.vertical, 12)
+    }
+
+    // MARK: - Fallback
+
+    /// Creates a minimal PorchWeatherData from AmbientWeatherData when no porchWeatherData exists
+    private func makeFallbackPorchData(from data: AmbientWeatherData) -> PorchWeatherData {
+        var porch = PorchWeatherData(
+            stationID: data.macAddress ?? "--",
+            stationName: data.info.name,
+            brand: .ambient,
+            timestamp: data.observation.date ?? Date()
+        )
+        porch.temperatureF = data.observation.tempF
+        porch.feelsLikeF = data.observation.feelsLike
+        porch.humidity = data.observation.humidity
+        return porch
     }
 }

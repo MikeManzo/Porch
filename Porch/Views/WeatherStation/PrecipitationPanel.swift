@@ -7,17 +7,30 @@
 
 import SwiftUI
 import AmbientWeather
+import PorchStationKit
 
 /// Panel displaying rainfall accumulation periods and last rain time
 struct PrecipitationPanel: View {
-    let observation: AmbientLastData
+    let porchData: PorchWeatherData?
+    let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
+
+    /// Init from PorchWeatherData (new path)
+    init(porchData: PorchWeatherData) {
+        self.porchData = porchData
+        self.observation = nil
+    }
+
+    /// Init from AmbientLastData (legacy path)
+    init(observation: AmbientLastData) {
+        self.observation = observation
+        self.porchData = nil
+    }
 
     private var isMetric: Bool { manager.unitSystem == .metric }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header
             HStack {
                 Image(systemName: "cloud.rain")
                     .foregroundStyle(.blue)
@@ -26,7 +39,6 @@ struct PrecipitationPanel: View {
                 Spacer()
             }
 
-            // Rain periods grid
             let periods = buildRainPeriods()
             if !periods.isEmpty {
                 let rows = stride(from: 0, to: periods.count, by: 3).map {
@@ -57,8 +69,8 @@ struct PrecipitationPanel: View {
                     .foregroundStyle(.white.opacity(0.3))
             }
 
-            // Last rain timestamp
-            if let lastRain = observation.lastRain, !lastRain.isEmpty {
+            // Last rain timestamp (Ambient only)
+            if let observation, let lastRain = observation.lastRain, !lastRain.isEmpty {
                 Divider().opacity(0.2)
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
@@ -77,14 +89,26 @@ struct PrecipitationPanel: View {
     // MARK: - Rain Periods
 
     private func buildRainPeriods() -> [(label: String, value: String)] {
-        var periods: [(label: String, value: String)] = []
-        if let val = observation.hourlyRainIn { periods.append(("Hourly", formatRain(val))) }
-        if let val = observation.dailyRainIn { periods.append(("Today", formatRain(val))) }
-        if let val = observation.weeklyRainIn { periods.append(("Week", formatRain(val))) }
-        if let val = observation.monthlyRainIn { periods.append(("Month", formatRain(val))) }
-        if let val = observation.yearlyRainIn { periods.append(("Year", formatRain(val))) }
-        if let val = observation.eventRainIn { periods.append(("Event", formatRain(val))) }
-        return periods
+        if let porchData {
+            var periods: [(label: String, value: String)] = []
+            if let val = porchData.rainRateInPerHr { periods.append(("Rate", formatRain(val))) }
+            if let val = porchData.dailyRainIn { periods.append(("Today", formatRain(val))) }
+            if let val = porchData.weeklyRainIn { periods.append(("Week", formatRain(val))) }
+            if let val = porchData.monthlyRainIn { periods.append(("Month", formatRain(val))) }
+            if let val = porchData.yearlyRainIn { periods.append(("Year", formatRain(val))) }
+            if let val = porchData.eventRainIn { periods.append(("Event", formatRain(val))) }
+            return periods
+        } else if let observation {
+            var periods: [(label: String, value: String)] = []
+            if let val = observation.hourlyRainIn { periods.append(("Hourly", formatRain(val))) }
+            if let val = observation.dailyRainIn { periods.append(("Today", formatRain(val))) }
+            if let val = observation.weeklyRainIn { periods.append(("Week", formatRain(val))) }
+            if let val = observation.monthlyRainIn { periods.append(("Month", formatRain(val))) }
+            if let val = observation.yearlyRainIn { periods.append(("Year", formatRain(val))) }
+            if let val = observation.eventRainIn { periods.append(("Event", formatRain(val))) }
+            return periods
+        }
+        return []
     }
 
     private func formatRain(_ inches: Double) -> String {

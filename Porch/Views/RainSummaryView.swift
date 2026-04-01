@@ -7,11 +7,25 @@
 
 import SwiftUI
 import AmbientWeather
+import PorchStationKit
 
 /// Compact card showing all rain accumulation periods and last rain time
 struct RainSummaryView: View {
-    let observation: AmbientLastData
+    let porchData: PorchWeatherData?
+    let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
+
+    /// Init from PorchWeatherData (new path)
+    init(porchData: PorchWeatherData) {
+        self.porchData = porchData
+        self.observation = nil
+    }
+
+    /// Init from AmbientLastData (legacy path)
+    init(observation: AmbientLastData) {
+        self.observation = observation
+        self.porchData = nil
+    }
 
     private var isMetric: Bool { manager.unitSystem == .metric }
 
@@ -42,8 +56,8 @@ struct RainSummaryView: View {
                     }
                 }
 
-                // Last rain timestamp
-                if let lastRain = observation.lastRain, !lastRain.isEmpty {
+                // Last rain timestamp (Ambient only — not available in PorchWeatherData)
+                if let observation, let lastRain = observation.lastRain, !lastRain.isEmpty {
                     HStack(spacing: 4) {
                         Image(systemName: "clock")
                             .font(.caption2)
@@ -58,27 +72,33 @@ struct RainSummaryView: View {
     }
 
     private func buildRainPeriods() -> [(label: String, value: String)] {
+        if let porchData {
+            return buildFromPorch(porchData)
+        } else if let observation {
+            return buildFromAmbient(observation)
+        }
+        return []
+    }
+
+    private func buildFromPorch(_ data: PorchWeatherData) -> [(label: String, value: String)] {
         var periods: [(label: String, value: String)] = []
+        if let val = data.rainRateInPerHr { periods.append(("Rate", formatRain(val))) }
+        if let val = data.dailyRainIn { periods.append(("Today", formatRain(val))) }
+        if let val = data.weeklyRainIn { periods.append(("Week", formatRain(val))) }
+        if let val = data.monthlyRainIn { periods.append(("Month", formatRain(val))) }
+        if let val = data.yearlyRainIn { periods.append(("Year", formatRain(val))) }
+        if let val = data.eventRainIn { periods.append(("Event", formatRain(val))) }
+        return periods
+    }
 
-        if let val = observation.hourlyRainIn {
-            periods.append(("Hourly", formatRain(val)))
-        }
-        if let val = observation.dailyRainIn {
-            periods.append(("Today", formatRain(val)))
-        }
-        if let val = observation.weeklyRainIn {
-            periods.append(("Week", formatRain(val)))
-        }
-        if let val = observation.monthlyRainIn {
-            periods.append(("Month", formatRain(val)))
-        }
-        if let val = observation.yearlyRainIn {
-            periods.append(("Year", formatRain(val)))
-        }
-        if let val = observation.eventRainIn {
-            periods.append(("Event", formatRain(val)))
-        }
-
+    private func buildFromAmbient(_ obs: AmbientLastData) -> [(label: String, value: String)] {
+        var periods: [(label: String, value: String)] = []
+        if let val = obs.hourlyRainIn { periods.append(("Hourly", formatRain(val))) }
+        if let val = obs.dailyRainIn { periods.append(("Today", formatRain(val))) }
+        if let val = obs.weeklyRainIn { periods.append(("Week", formatRain(val))) }
+        if let val = obs.monthlyRainIn { periods.append(("Month", formatRain(val))) }
+        if let val = obs.yearlyRainIn { periods.append(("Year", formatRain(val))) }
+        if let val = obs.eventRainIn { periods.append(("Event", formatRain(val))) }
         return periods
     }
 

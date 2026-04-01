@@ -9,6 +9,7 @@ import SwiftUI
 import Combine
 import AmbientWeather
 import CoreLocation
+import PorchStationKit
 
 /// One-shot location helper using CLLocationManager
 private class LocationHelper: NSObject, ObservableObject, CLLocationManagerDelegate {
@@ -72,43 +73,60 @@ struct ConnectionSettingsTab: View {
     // Location helper
     @StateObject private var locationHelper = LocationHelper()
 
+    /// Whether the selected brand is one of the original two with full support
+    private var isLegacyBrand: Bool {
+        manager.selectedBrand == .ecowitt || manager.selectedBrand == .ambient
+    }
+
     var body: some View {
         Form {
-            // MARK: - Data Source
+            // MARK: - Station Brand Picker
 
-            Section("Data Source") {
-                Picker("Source", selection: $manualSource) {
-                    Text("Ecowitt (Local)").tag(DataSourceMode.ecowittLocal)
-                    Text("Ambient Weather").tag(DataSourceMode.ambientCloud)
-                }
-                .pickerStyle(.segmented)
-                .disabled(manager.dataSourceMode == .auto)
-                .onChange(of: manualSource) {
-                    if manager.dataSourceMode != .auto {
-                        manager.dataSourceMode = manualSource
+            Section("Station Brand") {
+                Picker("Brand", selection: $manager.selectedBrand) {
+                    ForEach(StationRegistry.shared.availableBrands) { brand in
+                        Text(brand.displayName).tag(brand)
                     }
                 }
+                .onChange(of: manager.selectedBrand) {
+                    // Sync DataSourceMode for legacy brands
+                    switch manager.selectedBrand {
+                    case .ecowitt:
+                        if manager.dataSourceMode == .ambientCloud {
+                            manager.dataSourceMode = .ecowittLocal
+                        }
+                        manualSource = .ecowittLocal
+                    case .ambient:
+                        if manager.dataSourceMode == .ecowittLocal {
+                            manager.dataSourceMode = .ambientCloud
+                        }
+                        manualSource = .ambientCloud
+                    default:
+                        break
+                    }
+                }
+            }
 
-                Toggle(isOn: Binding(
-                    get: { manager.dataSourceMode == .auto },
-                    set: { isAuto in
-                        manager.dataSourceMode = isAuto ? .auto : manualSource
-                    }
-                )) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Auto (Local Priority)")
-                        Text("Use local gateway when home, cloud API when away")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .disabled(!manager.isAutoAvailable)
+            // MARK: - Legacy Brand Configuration
+
+            if isLegacyBrand {
+                legacyDataSourceSection
             }
 
             // MARK: - Source Configuration
 
-            ecowittSection
-            ambientSection
+            if manager.selectedBrand == .ecowitt || (isLegacyBrand && manager.dataSourceMode == .auto) {
+                ecowittSection
+            }
+            if manager.selectedBrand == .ambient || (isLegacyBrand && manager.dataSourceMode == .auto) {
+                ambientSection
+            }
+
+            // MARK: - Generic Brand Configuration
+
+            if !isLegacyBrand {
+                genericBrandSection
+            }
 
             // MARK: - Connection Controls (shared)
 
@@ -145,6 +163,41 @@ struct ConnectionSettingsTab: View {
             if manager.dataSourceMode != .auto {
                 manualSource = manager.dataSourceMode
             }
+        }
+    }
+
+    // MARK: - Legacy Data Source Toggle (Ecowitt/Ambient only)
+
+    private var legacyDataSourceSection: some View {
+        Section("Data Source") {
+            Picker("Source", selection: $manualSource) {
+                Text("Ecowitt (Local)").tag(DataSourceMode.ecowittLocal)
+                Text("Ambient Weather").tag(DataSourceMode.ambientCloud)
+            }
+            .pickerStyle(.segmented)
+            .disabled(manager.dataSourceMode == .auto)
+            .onChange(of: manualSource) {
+                if manager.dataSourceMode != .auto {
+                    manager.dataSourceMode = manualSource
+                    // Sync brand selection
+                    manager.selectedBrand = manualSource == .ecowittLocal ? .ecowitt : .ambient
+                }
+            }
+
+            Toggle(isOn: Binding(
+                get: { manager.dataSourceMode == .auto },
+                set: { isAuto in
+                    manager.dataSourceMode = isAuto ? .auto : manualSource
+                }
+            )) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Auto (Local Priority)")
+                    Text("Use local gateway when home, cloud API when away")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .disabled(!manager.isAutoAvailable)
         }
     }
 
@@ -287,7 +340,7 @@ struct ConnectionSettingsTab: View {
                         }
                     } label: {
                         Label(
-                            locationHelper.isFetching ? "Locating…" : "Use Current Location",
+                            locationHelper.isFetching ? "Locating..." : "Use Current Location",
                             systemImage: "location.fill"
                         )
                     }
@@ -315,6 +368,40 @@ struct ConnectionSettingsTab: View {
         }
     }
 
+    // MARK: - Generic Brand Configuration (for new brands)
+
+    private var genericBrandSection: some View {
+        let brand = manager.selectedBrand
+        let connType = brand.supportedConnectionTypes.first ?? .cloud
+        let fields = StationRegistry.shared.configurationFields(brand: brand, connectionType: connType)
+
+        return Section("\(brand.displayName) Configuration") {
+            if fields.isEmpty {
+                Text("No configuration needed")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(fields) { field in
+                    let binding = Binding<String>(
+                        get: { manager.brandConfigValues[field.id] ?? "" },
+                        set: { manager.brandConfigValues[field.id] = $0 }
+                    )
+
+                    if field.isSecure {
+                        SecureField(field.label, text: binding, prompt: Text(field.placeholder))
+                            .textFieldStyle(.roundedBorder)
+                    } else {
+                        TextField(field.label, text: binding, prompt: Text(field.placeholder))
+                            .textFieldStyle(.roundedBorder)
+                    }
+                }
+            }
+
+            Label("Support for \(brand.displayName) is coming in a future update.", systemImage: "info.circle")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     // MARK: - Connection Section (shared)
 
     private var connectionSection: some View {
@@ -324,14 +411,7 @@ struct ConnectionSettingsTab: View {
                     applyInputs()
                     manager.connect()
                 } label: {
-                    Label(
-                        manager.dataSourceMode == .ambientCloud ? "Search for Stations" :
-                        manager.dataSourceMode == .ecowittLocal ? "Connect to Gateway" :
-                        "Auto Connect",
-                        systemImage: manager.dataSourceMode == .ambientCloud ? "antenna.radiowaves.left.and.right" :
-                        manager.dataSourceMode == .ecowittLocal ? "wifi.router" :
-                        "arrow.triangle.2.circlepath"
-                    )
+                    Label(connectButtonLabel, systemImage: connectButtonIcon)
                 }
                 .buttonStyle(.glass)
                 .disabled(isConnectDisabled)
@@ -374,7 +454,39 @@ struct ConnectionSettingsTab: View {
 
     // MARK: - Helpers
 
+    private var connectButtonLabel: String {
+        if !isLegacyBrand {
+            return "Connect to \(manager.selectedBrand.displayName)"
+        }
+        switch manager.dataSourceMode {
+        case .ambientCloud: return "Search for Stations"
+        case .ecowittLocal: return "Connect to Gateway"
+        case .auto: return "Auto Connect"
+        }
+    }
+
+    private var connectButtonIcon: String {
+        if !isLegacyBrand {
+            return "antenna.radiowaves.left.and.right"
+        }
+        switch manager.dataSourceMode {
+        case .ambientCloud: return "antenna.radiowaves.left.and.right"
+        case .ecowittLocal: return "wifi.router"
+        case .auto: return "arrow.triangle.2.circlepath"
+        }
+    }
+
     private var isConnectDisabled: Bool {
+        if !isLegacyBrand {
+            // For new brands, check that at least one required field is filled
+            let brand = manager.selectedBrand
+            let connType = brand.supportedConnectionTypes.first ?? .cloud
+            let fields = StationRegistry.shared.configurationFields(brand: brand, connectionType: connType)
+            let requiredFields = fields.filter(\.isRequired)
+            return requiredFields.contains { field in
+                (manager.brandConfigValues[field.id] ?? "").isEmpty
+            }
+        }
         switch manager.dataSourceMode {
         case .ambientCloud:
             return appKeyInput.isEmpty || apiKeyInput.isEmpty

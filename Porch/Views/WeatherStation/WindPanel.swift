@@ -7,17 +7,36 @@
 
 import SwiftUI
 import AmbientWeather
+import PorchStationKit
 
 /// Wind panel with animated compass rose and wind stats
 struct WindPanel: View {
-    let observation: AmbientLastData
+    let porchData: PorchWeatherData?
+    let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
+
+    /// Init from PorchWeatherData (new path)
+    init(porchData: PorchWeatherData) {
+        self.porchData = porchData
+        self.observation = nil
+    }
+
+    /// Init from AmbientLastData (legacy path)
+    init(observation: AmbientLastData) {
+        self.observation = observation
+        self.porchData = nil
+    }
 
     private var isMetric: Bool { manager.unitSystem == .metric }
 
+    private var windDir: Int? { porchData?.windDirection ?? observation?.windDir }
+    private var windDirAvg: Int? { observation?.windDirAvg10m }
+    private var speed: Double? { porchData?.windSpeedMPH ?? observation?.windSpeedMPH }
+    private var gust: Double? { porchData?.windGustMPH ?? observation?.windGustMPH }
+    private var maxGust: Double? { porchData?.maxDailyGustMPH ?? observation?.maxDailyGust }
+
     var body: some View {
         VStack(spacing: 16) {
-            // Section header
             HStack {
                 Image(systemName: "wind")
                     .foregroundStyle(.cyan)
@@ -26,32 +45,29 @@ struct WindPanel: View {
                 Spacer()
             }
 
-            // Compass rose
             AnimatedCompassRoseView(
-                windDirection: observation.windDir ?? 0,
-                windDirAvg10m: observation.windDirAvg10m,
-                windSpeed: observation.windSpeedMPH,
-                windGust: observation.windGustMPH,
+                windDirection: windDir ?? 0,
+                windDirAvg10m: windDirAvg,
+                windSpeed: speed,
+                windGust: gust,
                 isMetric: isMetric
             )
 
-            // Direction label
             HStack(spacing: 8) {
-                Text(cardinalDirection(for: observation.windDir ?? 0))
+                Text(cardinalDirection(for: windDir ?? 0))
                     .font(.system(.title3, design: .rounded, weight: .semibold))
                     .foregroundStyle(.white)
-                Text("\(observation.windDir ?? 0)°")
+                Text("\(windDir ?? 0)°")
                     .font(.system(.body, design: .rounded))
                     .foregroundStyle(.white.opacity(0.5))
             }
 
-            // Wind stats row
             HStack(spacing: 0) {
-                windStat(label: "Speed", value: formatSpeed(observation.windSpeedMPH), icon: "gauge.with.dots.needle.33percent")
+                windStat(label: "Speed", value: formatSpeed(speed), icon: "gauge.with.dots.needle.33percent")
                 Divider().frame(height: 30)
-                windStat(label: "Gust", value: formatSpeed(observation.windGustMPH), icon: "gauge.with.dots.needle.67percent")
+                windStat(label: "Gust", value: formatSpeed(gust), icon: "gauge.with.dots.needle.67percent")
                 Divider().frame(height: 30)
-                windStat(label: "Max", value: formatSpeed(observation.maxDailyGust), icon: "gauge.with.dots.needle.100percent")
+                windStat(label: "Max", value: formatSpeed(maxGust), icon: "gauge.with.dots.needle.100percent")
             }
         }
         .padding(20)

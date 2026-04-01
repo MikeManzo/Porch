@@ -7,23 +7,41 @@
 
 import SwiftUI
 import AmbientWeather
+import PorchStationKit
 
 /// Panel displaying indoor temperature, humidity, and related readings
 struct IndoorPanel: View {
-    let observation: AmbientLastData
+    let porchData: PorchWeatherData?
+    let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
+
+    /// Init from PorchWeatherData (new path)
+    init(porchData: PorchWeatherData) {
+        self.porchData = porchData
+        self.observation = nil
+    }
+
+    /// Init from AmbientLastData (legacy path)
+    init(observation: AmbientLastData) {
+        self.observation = observation
+        self.porchData = nil
+    }
 
     private var isMetric: Bool { manager.unitSystem == .metric }
 
-    /// Only show this panel when indoor sensor data exists
+    private var indoorTemp: Double? { porchData?.indoorTempF ?? observation?.tempInF }
+    private var indoorHumidity: Int? { porchData?.indoorHumidity ?? observation?.humidityIn }
+    // feelsLikeIn and dewPointIn are Ambient-only
+    private var feelsLikeIn: Double? { observation?.feelsLikeIn }
+    private var dewPointIn: Double? { observation?.dewPointIn }
+
     var hasData: Bool {
-        observation.tempInF != nil || observation.humidityIn != nil
+        indoorTemp != nil || indoorHumidity != nil
     }
 
     var body: some View {
         if hasData {
             VStack(alignment: .leading, spacing: 12) {
-                // Header
                 HStack {
                     Image(systemName: "house.fill")
                         .foregroundStyle(.green)
@@ -33,39 +51,19 @@ struct IndoorPanel: View {
                 }
 
                 HStack(spacing: 16) {
-                    if let temp = observation.tempInF {
-                        statView(
-                            icon: "thermometer.medium",
-                            label: "Temperature",
-                            value: formatTemp(temp),
-                            tint: .orange
-                        )
+                    if let temp = indoorTemp {
+                        statView(icon: "thermometer.medium", label: "Temperature", value: formatTemp(temp), tint: .orange)
                     }
-                    if let humidity = observation.humidityIn {
-                        statView(
-                            icon: "humidity",
-                            label: "Humidity",
-                            value: "\(humidity)%",
-                            tint: .cyan
-                        )
+                    if let humidity = indoorHumidity {
+                        statView(icon: "humidity", label: "Humidity", value: "\(humidity)%", tint: .cyan)
                     }
                 }
 
-                if let feelsLike = observation.feelsLikeIn {
+                if let feelsLike = feelsLikeIn {
                     HStack(spacing: 16) {
-                        statView(
-                            icon: "person.and.background.dotted",
-                            label: "Feels Like",
-                            value: formatTemp(feelsLike),
-                            tint: .orange
-                        )
-                        if let dewPoint = observation.dewPointIn {
-                            statView(
-                                icon: "drop.degreesign",
-                                label: "Dew Point",
-                                value: formatTemp(dewPoint),
-                                tint: .blue
-                            )
+                        statView(icon: "person.and.background.dotted", label: "Feels Like", value: formatTemp(feelsLike), tint: .orange)
+                        if let dewPoint = dewPointIn {
+                            statView(icon: "drop.degreesign", label: "Dew Point", value: formatTemp(dewPoint), tint: .blue)
                         }
                     }
                 }

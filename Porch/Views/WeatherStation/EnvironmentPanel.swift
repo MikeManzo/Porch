@@ -7,17 +7,37 @@
 
 import SwiftUI
 import AmbientWeather
+import PorchStationKit
 
 /// Panel displaying solar, UV, lightning, and air quality data
 struct EnvironmentPanel: View {
-    let observation: AmbientLastData
+    let porchData: PorchWeatherData?
+    let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
+
+    /// Init from PorchWeatherData (new path)
+    init(porchData: PorchWeatherData) {
+        self.porchData = porchData
+        self.observation = nil
+    }
+
+    /// Init from AmbientLastData (legacy path)
+    init(observation: AmbientLastData) {
+        self.observation = observation
+        self.porchData = nil
+    }
 
     private var isMetric: Bool { manager.unitSystem == .metric }
 
+    private var solarVal: Double? { porchData?.solarRadiation ?? observation?.solarRadiation }
+    private var uvVal: Int? { porchData?.uvIndex ?? observation?.uv }
+    private var lightningCount: Int? { porchData?.lightningDayCount ?? observation?.lightningDay }
+    private var lightningDist: Double? { porchData?.lightningDistanceMi ?? observation?.lightningDistance }
+    private var pm25Val: Double? { porchData?.pm25 ?? observation?.pm25 }
+    private var co2Val: Int? { porchData?.co2 ?? observation?.co2 }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header
             HStack {
                 Image(systemName: "sun.max.trianglebadge.exclamationmark")
                     .foregroundStyle(.orange)
@@ -27,19 +47,19 @@ struct EnvironmentPanel: View {
             }
 
             // Solar & UV
-            if observation.solarRadiation != nil || observation.uv != nil {
+            if solarVal != nil || uvVal != nil {
                 HStack(spacing: 16) {
-                    if let solar = observation.solarRadiation {
+                    if let solar = solarVal {
                         envStat(icon: "sun.max.fill", label: "Solar", value: String(format: "%.0f W/m²", solar), tint: .yellow)
                     }
-                    if let uv = observation.uv {
+                    if let uv = uvVal {
                         envStat(icon: "sun.max.trianglebadge.exclamationmark", label: uvDescription(uv), value: "\(uv)", tint: uvColor(uv))
                     }
                 }
             }
 
-            // Lightning (show whenever detector is present)
-            if let strikes = observation.lightningDay {
+            // Lightning
+            if let strikes = lightningCount {
                 Divider().opacity(0.2)
                 HStack(spacing: 8) {
                     Image(systemName: "bolt.fill")
@@ -52,7 +72,7 @@ struct EnvironmentPanel: View {
                             .font(.system(.callout, design: .rounded, weight: .semibold))
                             .foregroundStyle(.white)
                         HStack(spacing: 8) {
-                            if strikes > 0, let dist = observation.lightningDistance {
+                            if strikes > 0, let dist = lightningDist {
                                 let distStr = isMetric
                                     ? String(format: "%.1f km", dist * 1.60934)
                                     : String(format: "%.1f mi", dist)
@@ -60,10 +80,16 @@ struct EnvironmentPanel: View {
                                     .font(.caption)
                                     .foregroundStyle(.white.opacity(0.5))
                             }
-                            if strikes > 0, let ts = observation.lightningTime, ts > 0 {
-                                Text("Last: \(timeAgo(ts))")
-                                    .font(.caption)
-                                    .foregroundStyle(.white.opacity(0.5))
+                            if strikes > 0 {
+                                if let porchData, let ts = porchData.lightningTime {
+                                    Text("Last: \(timeAgoPorch(ts))")
+                                        .font(.caption)
+                                        .foregroundStyle(.white.opacity(0.5))
+                                } else if let observation, let ts = observation.lightningTime, ts > 0 {
+                                    Text("Last: \(timeAgoAmbient(ts))")
+                                        .font(.caption)
+                                        .foregroundStyle(.white.opacity(0.5))
+                                }
                             }
                             if strikes == 0 {
                                 Text("All clear")
@@ -77,10 +103,10 @@ struct EnvironmentPanel: View {
             }
 
             // Air Quality
-            if observation.pm25 != nil || observation.co2 != nil {
+            if pm25Val != nil || co2Val != nil {
                 Divider().opacity(0.2)
                 HStack(spacing: 16) {
-                    if let pm25 = observation.pm25 {
+                    if let pm25 = pm25Val {
                         let aqi = AQICalculator.calculate(pm25: pm25)
                         VStack(alignment: .leading, spacing: 4) {
                             HStack(spacing: 4) {
@@ -105,7 +131,7 @@ struct EnvironmentPanel: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    if let co2 = observation.co2 {
+                    if let co2 = co2Val {
                         envStat(icon: "carbon.dioxide.cloud", label: co2Label(co2), value: "\(co2) ppm", tint: co2Color(co2))
                     }
                 }
@@ -134,7 +160,14 @@ struct EnvironmentPanel: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func timeAgo(_ timestampMs: Int64) -> String {
+    private func timeAgoPorch(_ date: Date) -> String {
+        let minutes = Int(Date().timeIntervalSince(date) / 60)
+        if minutes < 60 { return "\(minutes)m ago" }
+        let hours = minutes / 60
+        return "\(hours)h ago"
+    }
+
+    private func timeAgoAmbient(_ timestampMs: Int64) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestampMs) / 1000.0)
         let minutes = Int(Date().timeIntervalSince(date) / 60)
         if minutes < 60 { return "\(minutes)m ago" }
@@ -142,7 +175,6 @@ struct EnvironmentPanel: View {
         return "\(hours)h ago"
     }
 
-    // UV color coding
     private func uvColor(_ uv: Int) -> Color {
         switch uv {
         case 0...2: .green
@@ -163,29 +195,6 @@ struct EnvironmentPanel: View {
         }
     }
 
-    // PM2.5 EPA AQI color scale
-    private func pm25Color(_ pm25: Double) -> Color {
-        switch pm25 {
-        case ..<12.1: .green
-        case ..<35.5: .yellow
-        case ..<55.5: .orange
-        case ..<150.5: .red
-        case ..<250.5: .purple
-        default: .brown
-        }
-    }
-
-    private func pm25Label(_ pm25: Double) -> String {
-        switch pm25 {
-        case ..<12.1: "Good"
-        case ..<35.5: "Moderate"
-        case ..<55.5: "Unhealthy*"
-        case ..<150.5: "Unhealthy"
-        default: "Hazardous"
-        }
-    }
-
-    // CO2 thresholds
     private func co2Color(_ co2: Int) -> Color {
         switch co2 {
         case ..<800: .green

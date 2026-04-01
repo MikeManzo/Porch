@@ -7,13 +7,27 @@
 
 import SwiftUI
 import AmbientWeather
+import PorchStationKit
 
 /// Compact horizontal bar showing key weather stats with Liquid Glass treatment.
 /// Stats are customizable via manager.quickStatKeys.
 struct QuickStatsBar: View {
-    let observation: AmbientLastData
+    let porchData: PorchWeatherData?
+    let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
     @Namespace private var glassNamespace
+
+    /// Init from PorchWeatherData (new path)
+    init(porchData: PorchWeatherData) {
+        self.porchData = porchData
+        self.observation = nil
+    }
+
+    /// Init from AmbientLastData (legacy path)
+    init(observation: AmbientLastData) {
+        self.observation = observation
+        self.porchData = nil
+    }
 
     private var isMetric: Bool { manager.unitSystem == .metric }
 
@@ -38,13 +52,16 @@ struct QuickStatsBar: View {
 
     @ViewBuilder
     private func statView(for key: String) -> some View {
+        // Map ambient keys to porch keys for lookup
+        let porchKey = WeatherManager.ambientToPorchKeyMap[key] ?? key
+
         switch key {
         case "windSpeedMPH":
             windStat
         case "humidity":
             quickStat(
                 icon: "humidity",
-                value: observation.humidity.map { "\($0)%" } ?? "--",
+                value: humidityValue,
                 label: "Humidity"
             )
         case "baromRelIn":
@@ -52,18 +69,40 @@ struct QuickStatsBar: View {
         case "uv":
             quickStat(
                 icon: "sun.max.trianglebadge.exclamationmark",
-                value: observation.uv.map { "\($0)" } ?? "--",
+                value: uvValue,
                 label: "UV"
             )
         default:
-            // Generic stat from SensorFormatter
-            let category = AmbientLastData.propertyCategories[key] ?? .unknown
-            quickStat(
-                icon: category.iconName,
-                value: SensorFormatter.menuBarString(for: key, from: observation, unitSystem: manager.unitSystem),
-                label: SensorFormatter.sensorDescription(for: key, unitSystem: manager.unitSystem)
-            )
+            if let porchData {
+                let category = PorchWeatherData.category(for: porchKey)
+                quickStat(
+                    icon: category.iconName,
+                    value: SensorFormatter.menuBarString(for: porchKey, from: porchData, unitSystem: manager.unitSystem),
+                    label: SensorFormatter.sensorDescription(for: porchKey, unitSystem: manager.unitSystem)
+                )
+            } else if let observation {
+                let category = AmbientLastData.propertyCategories[key] ?? .unknown
+                quickStat(
+                    icon: category.iconName,
+                    value: SensorFormatter.menuBarString(for: key, from: observation, unitSystem: manager.unitSystem),
+                    label: SensorFormatter.sensorDescription(for: key, unitSystem: manager.unitSystem)
+                )
+            }
         }
+    }
+
+    // MARK: - Value Accessors
+
+    private var humidityValue: String {
+        if let porchData, let h = porchData.humidity { return "\(h)%" }
+        if let observation, let h = observation.humidity { return "\(h)%" }
+        return "--"
+    }
+
+    private var uvValue: String {
+        if let porchData, let uv = porchData.uvIndex { return "\(uv)" }
+        if let observation, let uv = observation.uv { return "\(uv)" }
+        return "--"
     }
 
     // MARK: - Wind Stat with Compass
@@ -71,7 +110,8 @@ struct QuickStatsBar: View {
     private var windStat: some View {
         VStack(spacing: 6) {
             Group {
-                if let dir = observation.windDir {
+                let dir = porchData?.windDirection ?? observation?.windDir
+                if let dir {
                     WindCompassView(degrees: dir)
                 } else {
                     Image(systemName: "wind")
@@ -151,13 +191,15 @@ struct QuickStatsBar: View {
     // MARK: - Formatting
 
     private func formatWind() -> String {
-        guard let speed = observation.windSpeedMPH else { return "--" }
+        let speed = porchData?.windSpeedMPH ?? observation?.windSpeedMPH
+        guard let speed else { return "--" }
         let displaySpeed = isMetric ? speed * 1.60934 : speed
         return String(format: "%.1f", displaySpeed)
     }
 
     private func formatPressure() -> String {
-        guard let pressure = observation.baromRelIn else { return "--" }
+        let pressure = porchData?.pressureRelativeInHg ?? observation?.baromRelIn
+        guard let pressure else { return "--" }
         if isMetric {
             return String(format: "%.0f", pressure * 33.8639)
         }

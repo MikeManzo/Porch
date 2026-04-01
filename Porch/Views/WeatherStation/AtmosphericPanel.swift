@@ -7,18 +7,36 @@
 
 import SwiftUI
 import AmbientWeather
+import PorchStationKit
 
 /// Panel displaying pressure, humidity, and dew point
 struct AtmosphericPanel: View {
-    let observation: AmbientLastData
+    let porchData: PorchWeatherData?
+    let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
     @State private var showAbsolute = false
 
+    /// Init from PorchWeatherData (new path)
+    init(porchData: PorchWeatherData) {
+        self.porchData = porchData
+        self.observation = nil
+    }
+
+    /// Init from AmbientLastData (legacy path)
+    init(observation: AmbientLastData) {
+        self.observation = observation
+        self.porchData = nil
+    }
+
     private var isMetric: Bool { manager.unitSystem == .metric }
+
+    private var relPressure: Double? { porchData?.pressureRelativeInHg ?? observation?.baromRelIn }
+    private var absPressure: Double? { porchData?.pressureAbsoluteInHg ?? observation?.baromAbsIn }
+    private var humidityVal: Int? { porchData?.humidity ?? observation?.humidity }
+    private var dewPointVal: Double? { porchData?.dewPointF ?? observation?.dewPoint }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header
             HStack {
                 Image(systemName: "barometer")
                     .foregroundStyle(.purple)
@@ -27,11 +45,8 @@ struct AtmosphericPanel: View {
                 Spacer()
             }
 
-            // Pressure with trend and abs/rel toggle
-            if let relPressure = observation.baromRelIn {
-                let displayPressure = showAbsolute
-                    ? (observation.baromAbsIn ?? relPressure)
-                    : relPressure
+            if let relPressure {
+                let displayPressure = showAbsolute ? (absPressure ?? relPressure) : relPressure
 
                 HStack(spacing: 6) {
                     Image(systemName: manager.pressureTrend.icon)
@@ -42,7 +57,7 @@ struct AtmosphericPanel: View {
                             Text(showAbsolute ? "Absolute" : "Relative")
                                 .font(.caption)
                                 .foregroundStyle(.white.opacity(0.5))
-                            if observation.baromAbsIn != nil {
+                            if absPressure != nil {
                                 Button {
                                     showAbsolute.toggle()
                                 } label: {
@@ -69,8 +84,7 @@ struct AtmosphericPanel: View {
 
             Divider().opacity(0.2)
 
-            // Humidity
-            if let humidity = observation.humidity {
+            if let humidity = humidityVal {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Humidity")
@@ -81,7 +95,6 @@ struct AtmosphericPanel: View {
                             .foregroundStyle(.white)
                     }
                     Spacer()
-                    // Humidity gradient bar
                     GeometryReader { geometry in
                         let fillWidth = geometry.size.width * CGFloat(humidity) / 100
                         ZStack(alignment: .leading) {
@@ -103,8 +116,7 @@ struct AtmosphericPanel: View {
                 }
             }
 
-            // Dew point
-            if let dewPoint = observation.dewPoint {
+            if let dewPoint = dewPointVal {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Dew Point")
@@ -141,15 +153,6 @@ struct AtmosphericPanel: View {
         case .rising: .green
         case .falling: .orange
         case .steady: .blue
-        }
-    }
-
-    private func humidityColor(_ value: Int) -> Color {
-        switch value {
-        case 0..<30: .orange
-        case 30..<60: .green
-        case 60..<80: .cyan
-        default: .blue
         }
     }
 }

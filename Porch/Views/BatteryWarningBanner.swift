@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AmbientWeather
+import PorchStationKit
 
 /// Warning banner shown when any sensor has low battery
 struct BatteryWarningBanner: View {
@@ -32,10 +33,13 @@ struct BatteryWarningBanner: View {
     }
 
     private var batteryMessage: String {
-        let names = lowSensors.map {
-            AmbientLastData.sensorDescriptions[$0]?
+        let names = lowSensors.map { key in
+            // Try PorchWeatherData registry first, then fall back to Ambient
+            let porchDesc = PorchWeatherData.sensorDescription(for: key)
+            let desc = porchDesc != key ? porchDesc : (AmbientLastData.sensorDescriptions[key] ?? key)
+            return desc
                 .replacingOccurrences(of: "Battery", with: "")
-                .trimmingCharacters(in: .whitespaces) ?? $0
+                .trimmingCharacters(in: .whitespaces)
         }
         if names.count == 1 {
             return "Low battery: \(names[0])"

@@ -8,6 +8,8 @@
 import SwiftUI
 import SwiftData
 import AmbientWeather
+import PorchStationKit
+
 // MARK: - Graph Panel Identifier
 
 /// Identifies each reorderable trend-chart graph in the left column
@@ -39,7 +41,6 @@ struct WeatherStationView: View {
     init() {
         if let data = UserDefaults.standard.data(forKey: Self.graphOrderKey),
            let saved = try? JSONDecoder().decode([GraphPanel].self, from: data) {
-            // Restore saved order, adding any new graphs from app updates
             var order = saved.filter { GraphPanel.allCases.contains($0) }
             for graph in GraphPanel.allCases where !order.contains(graph) {
                 order.append(graph)
@@ -52,7 +53,6 @@ struct WeatherStationView: View {
 
     var body: some View {
         ZStack {
-            // Rich dark background for Liquid Glass
             backgroundGradient
 
             if let data = manager.weatherData {
@@ -93,6 +93,8 @@ struct WeatherStationView: View {
 
     @ViewBuilder
     private func dashboardContent(data: AmbientWeatherData) -> some View {
+        let porchData = manager.porchWeatherData
+
         ScrollView {
             GlassEffectContainer {
             VStack(spacing: 16) {
@@ -104,14 +106,25 @@ struct WeatherStationView: View {
                     // Left column (flexible width)
                     VStack(spacing: 16) {
                         // Fixed: Current Conditions
-                        CurrentConditionsPanel(observation: data.observation)
+                        if let porchData {
+                            CurrentConditionsPanel(porchData: porchData)
+                        } else {
+                            CurrentConditionsPanel(observation: data.observation)
+                        }
 
                         // Fixed: Atmospheric & Precipitation (equal height)
                         HStack(spacing: 16) {
-                            AtmosphericPanel(observation: data.observation)
-                                .frame(maxHeight: .infinity, alignment: .top)
-                            PrecipitationPanel(observation: data.observation)
-                                .frame(maxHeight: .infinity, alignment: .top)
+                            if let porchData {
+                                AtmosphericPanel(porchData: porchData)
+                                    .frame(maxHeight: .infinity, alignment: .top)
+                                PrecipitationPanel(porchData: porchData)
+                                    .frame(maxHeight: .infinity, alignment: .top)
+                            } else {
+                                AtmosphericPanel(observation: data.observation)
+                                    .frame(maxHeight: .infinity, alignment: .top)
+                                PrecipitationPanel(observation: data.observation)
+                                    .frame(maxHeight: .infinity, alignment: .top)
+                            }
                         }
                         .fixedSize(horizontal: false, vertical: true)
 
@@ -119,7 +132,6 @@ struct WeatherStationView: View {
                         let visible = visibleGraphs(for: data)
                         ForEach(visible) { graph in
                             VStack(spacing: 0) {
-                                // Reorder controls (shown on hover)
                                 GraphReorderBar(
                                     isVisible: hoveredGraph == graph,
                                     canMoveUp: visible.first != graph,
@@ -147,14 +159,29 @@ struct WeatherStationView: View {
 
                     // Right column (fixed width)
                     VStack(spacing: 16) {
-                        WindPanel(observation: data.observation)
+                        if let porchData {
+                            WindPanel(porchData: porchData)
+                        } else {
+                            WindPanel(observation: data.observation)
+                        }
                         WindRosePanel()
-                        IndoorPanel(observation: data.observation)
-                        EnvironmentPanel(observation: data.observation)
+                        if let porchData {
+                            IndoorPanel(porchData: porchData)
+                            EnvironmentPanel(porchData: porchData)
+                        } else {
+                            IndoorPanel(observation: data.observation)
+                            EnvironmentPanel(observation: data.observation)
+                        }
                         WeeklyExtremesPanel()
-                        LeakDetectionPanel(observation: data.observation)
+                        if let porchData {
+                            LeakDetectionPanel(porchData: porchData)
+                            GardenPanel(porchData: porchData)
+                        } else {
+                            LeakDetectionPanel(observation: data.observation)
+                            GardenPanel(observation: data.observation)
+                        }
+                        // Relay panel stays Ambient-only
                         RelayStatusPanel(observation: data.observation)
-                        GardenPanel(observation: data.observation)
                     }
                     .frame(width: 360)
                     }
@@ -168,11 +195,15 @@ struct WeatherStationView: View {
 
     /// Returns only graphs whose sensor data is available, preserving the user's custom order
     private func visibleGraphs(for data: AmbientWeatherData) -> [GraphPanel] {
-        graphOrder.filter { graph in
+        let porchData = manager.porchWeatherData
+        return graphOrder.filter { graph in
             switch graph {
-            case .solarUV: data.observation.solarRadiation != nil
-            case .rain: data.observation.dailyRainIn != nil
-            case .pm25: data.observation.pm25 != nil
+            case .solarUV:
+                porchData?.solarRadiation != nil || data.observation.solarRadiation != nil
+            case .rain:
+                porchData?.dailyRainIn != nil || data.observation.dailyRainIn != nil
+            case .pm25:
+                porchData?.pm25 != nil || data.observation.pm25 != nil
             default: true
             }
         }
@@ -186,7 +217,6 @@ struct WeatherStationView: View {
 
     private enum MoveDirection { case up, down }
 
-    /// Moves a graph panel up or down among the visible graphs, swapping positions in the master order
     private func moveGraph(_ graph: GraphPanel, direction: MoveDirection, in visible: [GraphPanel]) {
         guard let visibleIndex = visible.firstIndex(of: graph) else { return }
         let adjacentIndex = direction == .up ? visibleIndex - 1 : visibleIndex + 1
@@ -319,27 +349,30 @@ struct WeatherStationView: View {
 
     private func topBar(data: AmbientWeatherData) -> some View {
         HStack {
-            // Station info
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
                     Text(data.info.name)
                         .font(.headline)
                         .foregroundStyle(.white)
-                    
-                    // Connection source indicator
+
                     Image(systemName: sourceIcon)
                         .foregroundStyle(statusColor)
                         .font(.system(size: 10))
                         .help(statusHelpText)
                 }
-                Text("Updated \(data.observation.observationDateFormatted)")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.4))
+                if let porchData = manager.porchWeatherData {
+                    Text("Updated \(porchData.observationDateFormatted)")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.4))
+                } else {
+                    Text("Updated \(data.observation.observationDateFormatted)")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.4))
+                }
             }
 
             Spacer()
 
-            // Close button
             Button {
                 dismiss()
             } label: {
@@ -439,7 +472,6 @@ struct HoverTracker: NSViewRepresentable {
 // MARK: - Graph Reorder Bar
 
 /// Reorder controls shown on hover — up/down buttons for moving graph panels.
-/// Always in layout (fixed height) to prevent jitter; fades in/out via opacity.
 struct GraphReorderBar: View {
     var isVisible: Bool
     var canMoveUp: Bool

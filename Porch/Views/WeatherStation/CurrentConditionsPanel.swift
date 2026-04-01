@@ -7,13 +7,27 @@
 
 import SwiftUI
 import AmbientWeather
+import PorchStationKit
 
 /// Hero conditions panel showing temperature, weather icon, feels-like, and daily extremes
 struct CurrentConditionsPanel: View {
-    let observation: AmbientLastData
+    let porchData: PorchWeatherData?
+    let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
     @EnvironmentObject var forecastManager: ForecastManager
     @State private var selectedForecastID: UUID?
+
+    /// Init from PorchWeatherData (new path)
+    init(porchData: PorchWeatherData) {
+        self.porchData = porchData
+        self.observation = nil
+    }
+
+    /// Init from AmbientLastData (legacy path)
+    init(observation: AmbientLastData) {
+        self.observation = observation
+        self.porchData = nil
+    }
 
     private var isMetric: Bool { manager.unitSystem == .metric }
 
@@ -28,7 +42,7 @@ struct CurrentConditionsPanel: View {
 
                 // Temperature
                 VStack(alignment: .leading, spacing: 4) {
-                    if let temp = observation.tempF {
+                    if let temp = porchData?.temperatureF ?? observation?.tempF {
                         let displayTemp = isMetric ? (temp - 32) * 5.0 / 9.0 : temp
                         Text("\(displayTemp, specifier: "%.1f")°")
                             .font(.system(size: 72, weight: .thin, design: .rounded))
@@ -41,13 +55,13 @@ struct CurrentConditionsPanel: View {
                     }
 
                     HStack(spacing: 16) {
-                        if let feelsLike = observation.feelsLike {
+                        if let feelsLike = porchData?.feelsLikeF ?? observation?.feelsLike {
                             let displayFL = isMetric ? (feelsLike - 32) * 5.0 / 9.0 : feelsLike
                             Label("Feels \(displayFL, specifier: "%.0f")°", systemImage: "person.and.background.dotted")
                                 .font(.subheadline)
                                 .foregroundStyle(.white.opacity(0.6))
                         }
-                        if let humidity = observation.humidity {
+                        if let humidity = porchData?.humidity ?? observation?.humidity {
                             Label("\(humidity)%", systemImage: "humidity")
                                 .font(.subheadline)
                                 .foregroundStyle(.white.opacity(0.6))
@@ -156,7 +170,6 @@ struct CurrentConditionsPanel: View {
 
     private func forecastPopover(for day: DailyForecast) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Day and date header
             HStack(spacing: 8) {
                 Image(systemName: day.icon)
                     .font(.system(size: 28))
@@ -175,14 +188,12 @@ struct CurrentConditionsPanel: View {
                 Spacer()
             }
 
-            // Condition
             Text(day.conditionText)
                 .font(.body.weight(.medium))
                 .foregroundStyle(.primary)
 
             Divider()
 
-            // Temperature
             HStack(spacing: 16) {
                 Label(formatTemp(day.highTemp), systemImage: "thermometer.sun.fill")
                     .font(.subheadline.weight(.semibold))
@@ -192,7 +203,6 @@ struct CurrentConditionsPanel: View {
                     .foregroundStyle(.cyan)
             }
 
-            // Feels-like
             if let flHigh = day.feelsLikeHigh, let flLow = day.feelsLikeLow {
                 HStack(spacing: 16) {
                     Label("Feels \(formatTemp(flHigh))", systemImage: "person.and.background.dotted")
@@ -204,7 +214,6 @@ struct CurrentConditionsPanel: View {
                 }
             }
 
-            // Precipitation
             if day.precipProbability != nil || day.precipAmount != nil {
                 HStack(spacing: 16) {
                     if let prob = day.precipProbability {
@@ -220,7 +229,6 @@ struct CurrentConditionsPanel: View {
                 }
             }
 
-            // Wind
             if day.windSpeedMax != nil || day.windGustMax != nil {
                 HStack(spacing: 16) {
                     if let speed = day.windSpeedMax {
@@ -241,14 +249,12 @@ struct CurrentConditionsPanel: View {
                 }
             }
 
-            // UV Index
             if let uv = day.uvIndexMax {
                 Label("UV \(String(format: "%.0f", uv)) — \(uvDescription(uv))", systemImage: "sun.max.trianglebadge.exclamationmark.fill")
                     .font(.subheadline)
                     .foregroundStyle(uvColor(uv))
             }
 
-            // Sunrise / Sunset
             if day.sunrise != nil || day.sunset != nil {
                 HStack(spacing: 16) {
                     if let rise = day.sunrise {
@@ -343,7 +349,6 @@ struct CurrentConditionsPanel: View {
         return sensorConditionIcon
     }
 
-    /// Color for the 48pt hero icon
     private var currentConditionColor: Color {
         if let current = forecastManager.currentWeather {
             return current.iconColor
@@ -354,23 +359,51 @@ struct CurrentConditionsPanel: View {
     // MARK: - Station Sensor Fallbacks
 
     private var sensorConditionIcon: String {
-        let hasRain = (observation.hourlyRainIn ?? 0) > 0
-        let hasLightning = (observation.lightningHour ?? 0) > 0
-        let highUV = (observation.uv ?? 0) >= 6
-        let highWind = (observation.windSpeedMPH ?? 0) >= 20
+        let hasRain: Bool
+        let hasLightning: Bool
+        let highUV: Bool
+        let highWind: Bool
+        let hasSolar: Bool
+
+        if let porchData {
+            hasRain = (porchData.rainRateInPerHr ?? 0) > 0
+            hasLightning = porchData.lightningDayCount.map { $0 > 0 } ?? false
+            highUV = (porchData.uvIndex ?? 0) >= 6
+            highWind = (porchData.windSpeedMPH ?? 0) >= 20
+            hasSolar = (porchData.solarRadiation ?? 0) > 0
+        } else if let observation {
+            hasRain = (observation.hourlyRainIn ?? 0) > 0
+            hasLightning = (observation.lightningHour ?? 0) > 0
+            highUV = (observation.uv ?? 0) >= 6
+            highWind = (observation.windSpeedMPH ?? 0) >= 20
+            hasSolar = (observation.solarRadiation ?? 0) > 0
+        } else {
+            return "cloud.sun.fill"
+        }
 
         if hasLightning && hasRain { return "cloud.bolt.rain.fill" }
         if hasLightning { return "cloud.bolt.fill" }
         if hasRain { return "cloud.rain.fill" }
         if highWind { return "wind" }
         if highUV { return "sun.max.fill" }
-        if (observation.solarRadiation ?? 0) > 0 { return "sun.max.fill" }
+        if hasSolar { return "sun.max.fill" }
         return "cloud.sun.fill"
     }
 
     private var sensorConditionColor: Color {
-        let hasRain = (observation.hourlyRainIn ?? 0) > 0
-        let hasLightning = (observation.lightningHour ?? 0) > 0
+        let hasRain: Bool
+        let hasLightning: Bool
+
+        if let porchData {
+            hasRain = (porchData.rainRateInPerHr ?? 0) > 0
+            hasLightning = porchData.lightningDayCount.map { $0 > 0 } ?? false
+        } else if let observation {
+            hasRain = (observation.hourlyRainIn ?? 0) > 0
+            hasLightning = (observation.lightningHour ?? 0) > 0
+        } else {
+            return .orange
+        }
+
         if hasLightning { return .yellow }
         if hasRain { return .cyan }
         return .orange
