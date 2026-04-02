@@ -13,7 +13,7 @@ import AmbientWeather
 struct PorchApp: App {
     @StateObject private var weatherManager = WeatherManager()
     @StateObject private var forecastManager = ForecastManager()
-    private let appUpdater = AppUpdater()
+    @StateObject private var appUpdater = AppUpdater()
     let modelContainer: ModelContainer
 
     init() {
