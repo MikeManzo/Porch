@@ -222,6 +222,11 @@ final class EcowittLocalAdapter: StationAdapter, @unchecked Sendable {
         }
 
         // Batteries
+        // Outdoor sensor — battery is reported on a common_list item (varies by firmware;
+        // could be windDirection, outdoorTemp, etc.). Any "common_*" key is the outdoor array battery.
+        if let outdoorBatt = ecowitt.batteries.first(where: { $0.key.hasPrefix("common_") }) {
+            data.batteries["outdoor"] = outdoorBatt.value == 0 ? .low : .ok
+        }
         if let v = ecowitt.batteries["rain"] {
             data.batteries["rain"] = v == 0 ? .low : .ok
         }
@@ -231,10 +236,18 @@ final class EcowittLocalAdapter: StationAdapter, @unchecked Sendable {
         if let v = ecowitt.batteries["co2"] {
             data.batteries["co2"] = v == 0 ? .low : .ok
         }
+        // Multi-channel temp/humidity sensor batteries
+        for ch in 1...8 {
+            if let v = ecowitt.batteries["ch\(ch)"] {
+                data.batteries["ch\(ch)"] = v == 0 ? .low : .ok
+            }
+        }
         for ch in 1...4 {
             if let v = ecowitt.batteries["leak\(ch)"] {
                 data.batteries["leak\(ch)"] = v == 0 ? .low : .ok
             }
+        }
+        for ch in 1...8 {
             if let v = ecowitt.batteries["soil\(ch)"] {
                 data.batteries["soil\(ch)"] = v == 0 ? .low : .ok
             }

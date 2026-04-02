@@ -161,9 +161,16 @@ class WeatherManager: ObservableObject {
     /// Cached low-battery sensor keys, updated each observation
     @Published private(set) var lowBatterySensors: [String] = []
 
-    /// Recompute low-battery sensors from the current observation.
-    /// Uses Mirror reflection, so we call this once per update rather than
-    /// on every SwiftUI view evaluation.
+    /// Recompute low-battery sensors from PorchWeatherData batteries.
+    private func updateLowBatterySensors(from porch: PorchWeatherData) {
+        lowBatterySensors = porch.batteries
+            .filter { $0.value.isLow }
+            .map { $0.key }
+            .sorted()
+    }
+
+    /// Recompute low-battery sensors from the current Ambient observation.
+    /// Uses Mirror reflection for the legacy Ambient-only path.
     private func updateLowBatterySensors(_ observation: AmbientLastData) {
         let batteryKeys = ["battIn", "battRain", "battLightning", "battOut",
                            "batleak1", "batleak2", "batleak3", "batleak4",
@@ -920,6 +927,7 @@ class WeatherManager: ObservableObject {
                 guard let self else { return }
                 await MainActor.run {
                     self.porchWeatherData = porchData
+                    self.updateLowBatterySensors(from: porchData)
 
                     // Bridge to AmbientWeatherData for existing views
                     guard let ambientData = WeatherDataBridge.toAmbientWeatherData(from: porchData) else { return }
@@ -1005,7 +1013,11 @@ class WeatherManager: ObservableObject {
     private func processNewObservation(_ observation: AmbientLastData) {
         updatePressureTrend(observation)
         updateDailyExtremes(observation)
-        updateLowBatterySensors(observation)
+        // Only use Ambient mirror-based battery detection when not using Porch adapter path
+        // (the adapter path uses the richer PorchWeatherData.batteries directly)
+        if porchWeatherData == nil {
+            updateLowBatterySensors(observation)
+        }
         if alertsEnabled {
             checkAlerts(observation)
         }

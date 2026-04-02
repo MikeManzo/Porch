@@ -8,6 +8,7 @@
 import SwiftUI
 import MapKit
 import AmbientWeather
+import PorchStationKit
 
 struct SensorsSettingsTab: View {
     @EnvironmentObject var manager: WeatherManager
@@ -47,28 +48,55 @@ struct SensorsSettingsTab: View {
                 }
 
                 ForEach(categories, id: \.0) { category, keys in
-                    Section {
-                        ForEach(keys, id: \.self) { key in
-                            LabeledContent {
-                                if category == .batteryStatus {
-                                    batteryStatusIndicator(for: key, observation: observation)
-                                } else {
-                                    Text(SensorFormatter.menuBarString(for: key, from: observation, unitSystem: manager.unitSystem))
-                                        .font(.system(.body, design: .rounded, weight: .medium))
-                                        .foregroundStyle(.primary)
+                    // Skip Ambient battery section when Porch batteries are available
+                    if category == .batteryStatus, manager.porchWeatherData != nil {
+                        EmptyView()
+                    } else {
+                        Section {
+                            ForEach(keys, id: \.self) { key in
+                                LabeledContent {
+                                    if category == .batteryStatus {
+                                        batteryStatusIndicator(for: key, observation: observation)
+                                    } else {
+                                        Text(SensorFormatter.menuBarString(for: key, from: observation, unitSystem: manager.unitSystem))
+                                            .font(.system(.body, design: .rounded, weight: .medium))
+                                            .foregroundStyle(.primary)
+                                    }
+                                } label: {
+                                    Text(SensorFormatter.sensorDescription(for: key, unitSystem: manager.unitSystem))
                                 }
+                            }
+                        } header: {
+                            HStack(spacing: 6) {
+                                Image(systemName: category.iconName)
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 20, height: 20)
+                                    .background(categoryColor(for: category), in: RoundedRectangle(cornerRadius: 5))
+                                Text(String(describing: category).camelCaseToWords())
+                            }
+                        }
+                    }
+                }
+
+                // Porch-native battery section (shows all batteries including non-Ambient ones)
+                if let porch = manager.porchWeatherData, !porch.batteries.isEmpty {
+                    Section {
+                        ForEach(porch.batteries.keys.sorted(), id: \.self) { key in
+                            LabeledContent {
+                                porchBatteryIndicator(for: key, status: porch.batteries[key]!)
                             } label: {
-                                Text(SensorFormatter.sensorDescription(for: key, unitSystem: manager.unitSystem))
+                                Text(PorchWeatherData.sensorDescription(for: key))
                             }
                         }
                     } header: {
                         HStack(spacing: 6) {
-                            Image(systemName: category.iconName)
+                            Image(systemName: "battery.25")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundStyle(.white)
                                 .frame(width: 20, height: 20)
-                                .background(categoryColor(for: category), in: RoundedRectangle(cornerRadius: 5))
-                            Text(String(describing: category).camelCaseToWords())
+                                .background(.gray, in: RoundedRectangle(cornerRadius: 5))
+                            Text("Battery Status")
                         }
                     }
                 }
@@ -85,7 +113,7 @@ struct SensorsSettingsTab: View {
 
     // MARK: - Category Colors
 
-    private func categoryColor(for category: SensorCategory) -> Color {
+    private func categoryColor(for category: AmbientWeather.SensorCategory) -> Color {
         switch category {
         case .temperature: .red
         case .humidityDewPoint: .blue
@@ -136,7 +164,16 @@ struct SensorsSettingsTab: View {
             return false
         }()
 
-        return HStack(spacing: 6) {
+        return batteryStatusCapsule(isGood: isGood)
+    }
+
+    /// Shows a green (good) or red (bad) indicator for PorchWeatherData batteries.
+    private func porchBatteryIndicator(for key: String, status: BatteryStatus) -> some View {
+        batteryStatusCapsule(isGood: !status.isLow)
+    }
+
+    private func batteryStatusCapsule(isGood: Bool) -> some View {
+        HStack(spacing: 6) {
             Image(systemName: isGood ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                 .font(.subheadline)
                 .foregroundStyle(isGood ? .green : .red)

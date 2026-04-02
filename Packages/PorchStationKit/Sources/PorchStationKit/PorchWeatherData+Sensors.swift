@@ -110,6 +110,23 @@ extension PorchWeatherData {
             add("leak_\(ch)", "Leak Sensor \(ch)", .leak, .boolean)
         }
 
+        // Battery sensors
+        add("outdoor", "Outdoor Sensor Battery", .battery, .batteryStatus)
+        add("indoor", "Indoor Sensor Battery", .battery, .batteryStatus)
+        add("rain", "Rain Sensor Battery", .battery, .batteryStatus)
+        add("lightning", "Lightning Sensor Battery", .battery, .batteryStatus)
+        add("co2", "CO\u{2082}/PM2.5 Sensor Battery", .battery, .batteryStatus)
+        add("cellgateway", "Cell Gateway Battery", .battery, .batteryStatus)
+        for ch in 1...8 {
+            add("ch\(ch)", "Channel \(ch) Sensor Battery", .battery, .batteryStatus)
+        }
+        for ch in 1...8 {
+            add("soil\(ch)", "Soil Sensor \(ch) Battery", .battery, .batteryStatus)
+        }
+        for ch in 1...4 {
+            add("leak\(ch)", "Leak Sensor \(ch) Battery", .battery, .batteryStatus)
+        }
+
         return reg
     }()
 

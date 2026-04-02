@@ -145,6 +145,8 @@ struct WeatherDataBridge {
                 dict["battsm\(ch)"] = status.isLow ? 0 : 1
             }
         }
+        // Note: ch1-ch8 (multi-channel temp/humidity) batteries have no Ambient equivalent;
+        // they are handled directly via PorchWeatherData.batteries in the Porch path.
 
         return dict
     }
