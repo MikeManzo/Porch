@@ -3,12 +3,12 @@
     <channel>
         <title>Porch</title>
         <item>
-            <title>0.8.0</title>
-            <pubDate>Wed, 01 Apr 2026 14:48:07 -0400</pubDate>
-            <sparkle:version>17</sparkle:version>
-            <sparkle:shortVersionString>0.8.0</sparkle:shortVersionString>
+            <title>0.8.1</title>
+            <pubDate>Thu, 02 Apr 2026 09:51:14 -0400</pubDate>
+            <sparkle:version>18</sparkle:version>
+            <sparkle:shortVersionString>0.8.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.4</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/MikeManzo/Porch/releases/download/v0.8.0/Porch.dmg" length="4523005" type="application/octet-stream" sparkle:edSignature="z4Mg2XN+fQVMOU82Hk8/vvxT0Ir2rm0wEXG8l/7QnBhzwqZU/v/xdSNK20MAo2iE9vg7XIr7xVE7ZAlKYoa4BA=="/>
+            <enclosure url="https://github.com/MikeManzo/Porch/releases/download/v0.8.1/Porch.dmg" length="4528819" type="application/octet-stream" sparkle:edSignature="9IX756K3t1513KpoIDgAsJti02cr7BzEF/z7baOGRtCcDMgLv2uVM290CVnsnqx/HvnBbd+ehGGHVkMoVUFbAQ=="/>
         </item>
     </channel>
 </rss>
