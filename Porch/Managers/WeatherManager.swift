@@ -1401,3 +1401,111 @@ class WeatherManager: ObservableObject {
         }
     }
 }
+
+// MARK: - Preview Support
+
+#if DEBUG
+extension WeatherManager {
+    /// Creates a WeatherManager pre-populated with sample data for SwiftUI previews
+    static func preview() -> WeatherManager {
+        let manager = WeatherManager()
+        manager.connectionStatus = .connected
+        manager.activeDataSource = .ambient
+
+        // Decode sample AmbientWeatherData from JSON
+        let json: [String: Any] = [
+            "macAddress": "AA:BB:CC:DD:EE:FF",
+            "apiKey": "preview",
+            "lastData": [
+                "dateutc": Int64(Date().timeIntervalSince1970 * 1000),
+                "date": ISO8601DateFormatter().string(from: Date()),
+                "deviceId": "preview-device",
+                "tz": TimeZone.current.identifier,
+                "tempf": 72.5,
+                "humidity": 55,
+                "feelsLike": 71.0,
+                "dewPoint": 54.2,
+                "tempinf": 70.0,
+                "humidityin": 42,
+                "feelsLikein": 70.0,
+                "dewPointin": 48.0,
+                "baromrelin": 29.92,
+                "baromabsin": 29.85,
+                "windspeedmph": 5.2,
+                "windgustmph": 8.7,
+                "maxdailygust": 15.3,
+                "winddir": 225,
+                "winddir_avg10m": 220,
+                "solarradiation": 450.0,
+                "uv": 5,
+                "hourlyrainin": 0.0,
+                "dailyrainin": 0.12,
+                "weeklyrainin": 0.45,
+                "monthlyrainin": 1.23,
+                "yearlyrainin": 12.5,
+                "battin": 1,
+                "battout": 1,
+                "battrain": "1"
+            ],
+            "info": [
+                "name": "My Weather Station",
+                "coords": [
+                    "address": "123 Main St",
+                    "elevation": 150.0,
+                    "location": "Springfield",
+                    "geo": [
+                        "type": "Point",
+                        "coordinates": [-89.6501, 39.7817]
+                    ],
+                    "coords": [
+                        "lat": 39.7817,
+                        "lon": -89.6501
+                    ]
+                ]
+            ]
+        ]
+
+        if let jsonData = try? JSONSerialization.data(withJSONObject: json),
+           let ambientData = try? JSONDecoder().decode(AmbientWeatherData.self, from: jsonData) {
+            manager.weatherData = ambientData
+            manager.allStations[ambientData.stationID] = ambientData
+            manager.selectedStationID = ambientData.stationID
+        }
+
+        // Also set porchWeatherData for views that prefer it
+        var porch = PorchWeatherData(
+            stationID: "AA:BB:CC:DD:EE:FF",
+            stationName: "My Weather Station",
+            brand: .ambient,
+            timestamp: Date()
+        )
+        porch.temperatureF = 72.5
+        porch.humidity = 55
+        porch.feelsLikeF = 71.0
+        porch.dewPointF = 54.2
+        porch.indoorTempF = 70.0
+        porch.indoorHumidity = 42
+        porch.pressureRelativeInHg = 29.92
+        porch.pressureAbsoluteInHg = 29.85
+        porch.windSpeedMPH = 5.2
+        porch.windGustMPH = 8.7
+        porch.maxDailyGustMPH = 15.3
+        porch.windDirection = 225
+        porch.solarRadiation = 450.0
+        porch.uvIndex = 5
+        porch.rainRateInPerHr = 0.0
+        porch.dailyRainIn = 0.12
+        porch.weeklyRainIn = 0.45
+        porch.monthlyRainIn = 1.23
+        porch.yearlyRainIn = 12.5
+        manager.porchWeatherData = porch
+
+        // Sample daily extremes
+        manager.dailyHighTemp = 78.0
+        manager.dailyLowTemp = 62.0
+        manager.dailyHighWind = 15.3
+
+        return manager
+    }
+}
+#endif

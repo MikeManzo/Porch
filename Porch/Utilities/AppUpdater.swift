@@ -25,7 +25,7 @@ final class AppUpdater: NSObject, ObservableObject {
         super.init()
         controller = SPUStandardUpdaterController(
             startingUpdater: true,
-            updaterDelegate: nil,
+            updaterDelegate: self,
             userDriverDelegate: self
         )
         controller.updater.publisher(for: \.canCheckForUpdates)
@@ -35,6 +35,24 @@ final class AppUpdater: NSObject, ObservableObject {
     /// Trigger a manual update check
     func checkForUpdates() {
         updater.checkForUpdates()
+    }
+}
+
+// MARK: - SPUUpdaterDelegate (Update Discovery)
+
+extension AppUpdater: SPUUpdaterDelegate {
+    func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
+        updateAvailable = true
+    }
+
+    func updaterDidNotFindUpdate(_ updater: SPUUpdater) {
+        updateAvailable = false
+    }
+
+    func updater(_ updater: SPUUpdater, userDidMake choice: SPUUserUpdateChoice, forUpdate updateItem: SUAppcastItem, state: SPUUserUpdateState) {
+        if choice == .skip {
+            updateAvailable = false
+        }
     }
 }
 

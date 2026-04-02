@@ -90,8 +90,26 @@ struct SettingsView: View {
             .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 210)
             .toolbar(removing: .sidebarToggle)
         } detail: {
-            detailView
-                .toolbar(removing: .title)
+            VStack(spacing: 0) {
+                if appUpdater.updateAvailable {
+                    HStack {
+                        Spacer()
+                        Button {
+                            appUpdater.checkForUpdates()
+                        } label: {
+                            Label("Update Available", systemImage: "arrow.down.circle.fill")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.green)
+                        }
+                        .buttonStyle(.borderless)
+                        .padding(.trailing, 12)
+                        .padding(.top, 8)
+                    }
+                }
+
+                detailView
+                    .toolbar(removing: .title)
+            }
         }
         .toolbar(.hidden)
         .preferredColorScheme(.dark)

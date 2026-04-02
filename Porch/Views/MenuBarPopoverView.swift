@@ -28,7 +28,7 @@ struct MenuBarPopoverView: View {
 
             footerView
         }
-        .frame(width: 340)
+        .frame(width: 290)
     }
 
     // MARK: - Connected Content
@@ -225,7 +225,7 @@ struct MenuBarPopoverView: View {
             Button {
                 NSApplication.shared.terminate(nil)
             } label: {
-                Label("Quit Porch", systemImage: "power")
+                Label("Quit", systemImage: "power")
             }
             .buttonStyle(.borderless)
         }
@@ -250,3 +250,21 @@ struct MenuBarPopoverView: View {
         return porch
     }
 }
+// MARK: - Preview
+
+#if DEBUG
+#Preview("Connected") {
+    MenuBarPopoverView()
+        .environmentObject(WeatherManager.preview())
+        .environmentObject(AppUpdater())
+        .environmentObject(ForecastManager())
+}
+
+#Preview("Disconnected") {
+    MenuBarPopoverView()
+        .environmentObject(WeatherManager())
+        .environmentObject(AppUpdater())
+        .environmentObject(ForecastManager())
+}
+#endif
+
