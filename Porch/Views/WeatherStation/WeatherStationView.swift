@@ -329,6 +329,7 @@ struct WeatherStationView: View {
                 color: .blue,
                 unitSystem: manager.unitSystem,
                 convertToMetric: { $0 * 25.4 },
+                yFloorZero: true,
                 showGlass: false
             )
 

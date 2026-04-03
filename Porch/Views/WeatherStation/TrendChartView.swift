@@ -35,6 +35,7 @@ struct TrendChartView: View {
     let unitSystem: UnitSystem
     var convertToMetric: ((Double) -> Double)? = nil
     var secondary: SecondarySeries? = nil
+    var yFloorZero: Bool = false
     var showGlass: Bool = true
 
     @EnvironmentObject var manager: WeatherManager
@@ -240,8 +241,15 @@ struct TrendChartView: View {
         guard let lo = allValues.min(), let hi = allValues.max() else {
             return 0...1
         }
-        let padding = max((hi - lo) * 0.05, 0.5)
-        return (lo - padding)...(hi + padding)
+        let range = hi - lo
+        let padding: Double
+        if yFloorZero {
+            padding = max(range * 0.1, 0.01)
+            return 0...(hi + padding)
+        } else {
+            padding = max(range * 0.05, 0.5)
+            return (lo - padding)...(hi + padding)
+        }
     }
 
     // MARK: - X-Axis Format
