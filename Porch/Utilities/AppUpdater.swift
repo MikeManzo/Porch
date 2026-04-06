@@ -117,7 +117,7 @@ extension AppUpdater: SPUStandardUserDriverDelegate {
     }
 
     nonisolated func standardUserDriverWillFinishUpdateSession() {
-        MainActor.assumeIsolated {
+        _ = MainActor.assumeIsolated {
             // Return to menubar-only (background) mode
             NSApp.setActivationPolicy(.accessory)
         }

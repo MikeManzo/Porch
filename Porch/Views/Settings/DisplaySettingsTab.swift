@@ -13,6 +13,46 @@ struct DisplaySettingsTab: View {
 
     var body: some View {
         Form {
+            Section("Dashboard Theme") {
+                HStack(spacing: 12) {
+                    ForEach(DashboardThemeID.allCases) { themeID in
+                        let resolved = themeID.resolved
+                        let isSelected = manager.dashboardThemeID == themeID
+
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                manager.dashboardThemeID = themeID
+                            }
+                        } label: {
+                            VStack(spacing: 6) {
+                                // Mini mesh gradient preview
+                                MeshGradient(
+                                    width: 3, height: 3,
+                                    points: [
+                                        [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+                                        [0.0, 0.5], [0.5, 0.5], [1.0, 0.5],
+                                        [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
+                                    ],
+                                    colors: resolved.meshColors
+                                )
+                                .frame(width: 64, height: 44)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 2)
+                                )
+
+                                Text(themeID.displayName)
+                                    .font(.caption2)
+                                    .foregroundStyle(isSelected ? .primary : .secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
             Section("Units") {
                 Picker("Unit System", selection: manager.deferredBinding(for: \.unitSystem)) {
                     ForEach(UnitSystem.allCases) { system in

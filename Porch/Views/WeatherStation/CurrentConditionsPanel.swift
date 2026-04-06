@@ -15,6 +15,7 @@ struct CurrentConditionsPanel: View {
     let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
     @EnvironmentObject var forecastManager: ForecastManager
+    @Environment(\.dashboardTheme) private var theme
     @State private var selectedForecastID: UUID?
 
     /// Init from PorchWeatherData (new path)
@@ -74,20 +75,20 @@ struct CurrentConditionsPanel: View {
                 // Daily extremes & sun times
                 VStack(alignment: .trailing, spacing: 8) {
                     if let high = manager.dailyHighTemp {
-                        extremeStat(icon: "thermometer.sun.fill", label: "Hi", value: formatTemp(high), tint: .red)
+                        extremeStat(icon: "thermometer.sun.fill", label: "Hi", value: formatTemp(high), tint: theme.highTempColor)
                     }
                     if let low = manager.dailyLowTemp {
-                        extremeStat(icon: "thermometer.snowflake", label: "Lo", value: formatTemp(low), tint: .cyan)
+                        extremeStat(icon: "thermometer.snowflake", label: "Lo", value: formatTemp(low), tint: theme.lowTempColor)
                     }
                     if let gust = manager.dailyHighWind {
-                        extremeStat(icon: "wind", label: "Gust", value: formatWind(gust), tint: .teal)
+                        extremeStat(icon: "wind", label: "Gust", value: formatWind(gust), tint: theme.windColor)
                     }
                     if let today = forecastManager.dailyForecasts.first {
                         if let rise = today.sunrise {
-                            extremeStat(icon: "sunrise.fill", label: "Rise", value: rise.formatted(date: .omitted, time: .shortened), tint: .orange)
+                            extremeStat(icon: "sunrise.fill", label: "Rise", value: rise.formatted(date: .omitted, time: .shortened), tint: theme.solarColor)
                         }
                         if let set = today.sunset {
-                            extremeStat(icon: "sunset.fill", label: "Set", value: set.formatted(date: .omitted, time: .shortened), tint: .indigo)
+                            extremeStat(icon: "sunset.fill", label: "Set", value: set.formatted(date: .omitted, time: .shortened), tint: theme.accentColor)
                         }
                     }
                 }
@@ -197,10 +198,10 @@ struct CurrentConditionsPanel: View {
             HStack(spacing: 16) {
                 Label(formatTemp(day.highTemp), systemImage: "thermometer.sun.fill")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(theme.highTempColor)
                 Label(formatTemp(day.lowTemp), systemImage: "thermometer.snowflake")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.cyan)
+                    .foregroundStyle(theme.lowTempColor)
             }
 
             if let flHigh = day.feelsLikeHigh, let flLow = day.feelsLikeLow {
@@ -219,12 +220,12 @@ struct CurrentConditionsPanel: View {
                     if let prob = day.precipProbability {
                         Label("\(prob)%", systemImage: "drop.fill")
                             .font(.subheadline)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(theme.rainColor)
                     }
                     if let amount = day.precipAmount, amount > 0 {
                         Label(formatRain(amount), systemImage: "cloud.rain")
                             .font(.subheadline)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(theme.rainColor)
                     }
                 }
             }
@@ -234,12 +235,12 @@ struct CurrentConditionsPanel: View {
                     if let speed = day.windSpeedMax {
                         Label(formatWind(speed), systemImage: "wind")
                             .font(.subheadline)
-                            .foregroundStyle(.teal)
+                            .foregroundStyle(theme.windColor)
                     }
                     if let gust = day.windGustMax {
                         Label("Gusts \(formatWind(gust))", systemImage: "wind")
                             .font(.subheadline)
-                            .foregroundStyle(.teal)
+                            .foregroundStyle(theme.windColor)
                     }
                     if let dir = day.windDirection {
                         Text(windDirectionLabel(dir))
@@ -260,12 +261,12 @@ struct CurrentConditionsPanel: View {
                     if let rise = day.sunrise {
                         Label(rise.formatted(date: .omitted, time: .shortened), systemImage: "sunrise.fill")
                             .font(.subheadline)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(theme.solarColor)
                     }
                     if let set = day.sunset {
                         Label(set.formatted(date: .omitted, time: .shortened), systemImage: "sunset.fill")
                             .font(.subheadline)
-                            .foregroundStyle(.indigo)
+                            .foregroundStyle(theme.accentColor)
                     }
                 }
             }
@@ -404,8 +405,8 @@ struct CurrentConditionsPanel: View {
             return .orange
         }
 
-        if hasLightning { return .yellow }
-        if hasRain { return .cyan }
-        return .orange
+        if hasLightning { return theme.solarColor }
+        if hasRain { return theme.rainColor }
+        return theme.temperatureColor
     }
 }

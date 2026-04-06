@@ -264,6 +264,9 @@ class WeatherManager: ObservableObject {
     @Published var unitSystem: UnitSystem = UnitSystem(rawValue: UserDefaults.standard.string(forKey: "unitSystem") ?? "imperial") ?? .imperial {
         didSet { UserDefaults.standard.set(unitSystem.rawValue, forKey: "unitSystem") }
     }
+    @Published var dashboardThemeID: DashboardThemeID = DashboardThemeID(rawValue: UserDefaults.standard.string(forKey: "dashboardThemeID") ?? "midnight") ?? .midnight {
+        didSet { UserDefaults.standard.set(dashboardThemeID.rawValue, forKey: "dashboardThemeID") }
+    }
 
     // MARK: - Quick Stats Customization
 

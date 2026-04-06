@@ -14,6 +14,7 @@ struct EnvironmentPanel: View {
     let porchData: PorchWeatherData?
     let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
+    @Environment(\.dashboardTheme) private var theme
 
     /// Init from PorchWeatherData (new path)
     init(porchData: PorchWeatherData) {
@@ -40,7 +41,7 @@ struct EnvironmentPanel: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "sun.max.trianglebadge.exclamationmark")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(theme.environmentColor)
                 Text("Environment")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
@@ -70,7 +71,7 @@ struct EnvironmentPanel: View {
                             ? "\(strikes) strike\(strikes == 1 ? "" : "s") today"
                             : "0 strikes today")
                             .font(.system(.callout, design: .rounded, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(theme.primaryText)
                         HStack(spacing: 8) {
                             if strikes > 0, let dist = lightningDist {
                                 let distStr = isMetric
@@ -78,23 +79,23 @@ struct EnvironmentPanel: View {
                                     : String(format: "%.1f mi", dist)
                                 Text("Nearest: \(distStr)")
                                     .font(.caption)
-                                    .foregroundStyle(.white.opacity(0.5))
+                                    .foregroundStyle(theme.secondaryText)
                             }
                             if strikes > 0 {
                                 if let porchData, let ts = porchData.lightningTime {
                                     Text("Last: \(timeAgoPorch(ts))")
                                         .font(.caption)
-                                        .foregroundStyle(.white.opacity(0.5))
+                                        .foregroundStyle(theme.secondaryText)
                                 } else if let observation, let ts = observation.lightningTime, ts > 0 {
                                     Text("Last: \(timeAgoAmbient(ts))")
                                         .font(.caption)
-                                        .foregroundStyle(.white.opacity(0.5))
+                                        .foregroundStyle(theme.secondaryText)
                                 }
                             }
                             if strikes == 0 {
                                 Text("All clear")
                                     .font(.caption)
-                                    .foregroundStyle(.green.opacity(0.6))
+                                    .foregroundStyle(theme.environmentColor.opacity(0.6))
                             }
                         }
                     }
@@ -123,11 +124,11 @@ struct EnvironmentPanel: View {
                                     .foregroundStyle(aqi.color)
                                 Text("AQI")
                                     .font(.caption2)
-                                    .foregroundStyle(.white.opacity(0.5))
+                                    .foregroundStyle(theme.secondaryText)
                             }
                             Text(String(format: "%.1f µg/m³", pm25))
                                 .font(.caption2)
-                                .foregroundStyle(.white.opacity(0.5))
+                                .foregroundStyle(theme.secondaryText)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -155,7 +156,7 @@ struct EnvironmentPanel: View {
             }
             Text(value)
                 .font(.system(.callout, design: .rounded, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.primaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

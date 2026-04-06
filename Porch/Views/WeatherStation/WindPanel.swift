@@ -14,6 +14,7 @@ struct WindPanel: View {
     let porchData: PorchWeatherData?
     let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
+    @Environment(\.dashboardTheme) private var theme
 
     /// Init from PorchWeatherData (new path)
     init(porchData: PorchWeatherData) {
@@ -39,7 +40,7 @@ struct WindPanel: View {
         VStack(spacing: 16) {
             HStack {
                 Image(systemName: "wind")
-                    .foregroundStyle(.cyan)
+                    .foregroundStyle(theme.windColor)
                 Text("Wind")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
@@ -56,10 +57,10 @@ struct WindPanel: View {
             HStack(spacing: 8) {
                 Text(cardinalDirection(for: windDir ?? 0))
                     .font(.system(.title3, design: .rounded, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.primaryText)
                 Text("\(windDir ?? 0)°")
                     .font(.system(.body, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(theme.secondaryText)
             }
 
             HStack(spacing: 0) {
@@ -80,13 +81,13 @@ struct WindPanel: View {
         VStack(spacing: 4) {
             Image(systemName: icon)
                 .font(.caption2)
-                .foregroundStyle(.cyan.opacity(0.7))
+                .foregroundStyle(theme.windColor.opacity(0.7))
             Text(value)
                 .font(.system(.callout, design: .rounded, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.primaryText)
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(theme.secondaryText)
         }
         .frame(maxWidth: .infinity)
     }

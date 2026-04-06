@@ -11,6 +11,7 @@ import AmbientWeather
 /// Panel displaying smart relay On/Off status
 struct RelayStatusPanel: View {
     let observation: AmbientLastData
+    @Environment(\.dashboardTheme) private var theme
 
     private var relays: [(name: String, value: Int)] {
         var items: [(String, Int)] = []
@@ -33,7 +34,7 @@ struct RelayStatusPanel: View {
                 // Header
                 HStack {
                     Image(systemName: "app.connected.to.app.below.fill")
-                        .foregroundStyle(.indigo)
+                        .foregroundStyle(theme.relayColor)
                     Text("Relays")
                         .font(.subheadline.weight(.semibold))
                     Spacer()
@@ -51,7 +52,7 @@ struct RelayStatusPanel: View {
                                 .frame(width: 8, height: 8)
                             Text(relay.name)
                                 .font(.caption)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(theme.primaryText)
                             Spacer()
                             Text(isOn ? "ON" : "OFF")
                                 .font(.system(.caption2, design: .rounded, weight: .semibold))

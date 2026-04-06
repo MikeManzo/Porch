@@ -13,6 +13,7 @@ import PorchStationKit
 struct LeakDetectionPanel: View {
     let porchData: PorchWeatherData?
     let observation: AmbientLastData?
+    @Environment(\.dashboardTheme) private var theme
 
     /// Init from PorchWeatherData (new path)
     init(porchData: PorchWeatherData) {
@@ -47,7 +48,7 @@ struct LeakDetectionPanel: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Image(systemName: "drop.triangle.fill")
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(theme.leakColor)
                     Text("Leak Detection")
                         .font(.subheadline.weight(.semibold))
                     Spacer()
@@ -60,7 +61,7 @@ struct LeakDetectionPanel: View {
                             .frame(width: 8, height: 8)
                         Text(sensor.name)
                             .font(.callout)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(theme.primaryText)
                         Spacer()
                         Text(sensor.isWet ? "WET" : "Dry")
                             .font(.system(.caption, design: .rounded, weight: .semibold))

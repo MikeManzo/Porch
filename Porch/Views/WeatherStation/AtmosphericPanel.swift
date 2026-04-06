@@ -14,6 +14,7 @@ struct AtmosphericPanel: View {
     let porchData: PorchWeatherData?
     let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
+    @Environment(\.dashboardTheme) private var theme
     @State private var showAbsolute = false
 
     /// Init from PorchWeatherData (new path)
@@ -39,7 +40,7 @@ struct AtmosphericPanel: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "barometer")
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(theme.pressureColor)
                 Text("Atmospheric")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
@@ -56,21 +57,21 @@ struct AtmosphericPanel: View {
                         HStack(spacing: 4) {
                             Text(showAbsolute ? "Absolute" : "Relative")
                                 .font(.caption)
-                                .foregroundStyle(.white.opacity(0.5))
+                                .foregroundStyle(theme.secondaryText)
                             if absPressure != nil {
                                 Button {
                                     showAbsolute.toggle()
                                 } label: {
                                     Image(systemName: "arrow.left.arrow.right")
                                         .font(.caption2)
-                                        .foregroundStyle(.white.opacity(0.4))
+                                        .foregroundStyle(theme.secondaryText)
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
                         Text(formatPressure(displayPressure))
                             .font(.system(.title3, design: .rounded, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(theme.primaryText)
                     }
                     Spacer()
                     Text(manager.pressureTrend.rawValue.capitalized)
@@ -89,10 +90,10 @@ struct AtmosphericPanel: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Humidity")
                             .font(.caption)
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(theme.secondaryText)
                         Text("\(humidity)%")
                             .font(.system(.title3, design: .rounded, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(theme.primaryText)
                     }
                     Spacer()
                     GeometryReader { geometry in
@@ -121,10 +122,10 @@ struct AtmosphericPanel: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Dew Point")
                             .font(.caption)
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(theme.secondaryText)
                         Text(formatTemp(dewPoint))
                             .font(.system(.body, design: .rounded, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(theme.primaryText)
                     }
                     Spacer()
                 }

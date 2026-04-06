@@ -10,6 +10,7 @@ import SwiftUI
 /// Compact panel showing the past 7 days of daily high/low temperature and peak wind
 struct WeeklyExtremesPanel: View {
     @EnvironmentObject var manager: WeatherManager
+    @Environment(\.dashboardTheme) private var theme
 
     private var isMetric: Bool { manager.unitSystem == .metric }
 
@@ -20,7 +21,7 @@ struct WeeklyExtremesPanel: View {
                 HStack(spacing: 6) {
                     Image(systemName: "calendar")
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(theme.temperatureColor)
                     Text("Weekly Extremes")
                         .font(.caption.weight(.semibold))
                     Spacer()
@@ -38,7 +39,7 @@ struct WeeklyExtremesPanel: View {
                         .frame(maxWidth: .infinity)
                 }
                 .font(.system(size: 9))
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(theme.secondaryText)
 
                 Divider().opacity(0.2)
 
@@ -46,7 +47,7 @@ struct WeeklyExtremesPanel: View {
                     HStack(spacing: 0) {
                         Text(shortDay(record.date))
                             .font(.caption2)
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(theme.secondaryText)
                             .frame(width: 32, alignment: .leading)
 
                         if let hi = record.highTemp {
@@ -56,12 +57,12 @@ struct WeeklyExtremesPanel: View {
                                 Text(formatTemp(hi))
                             }
                             .font(.caption2)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(theme.highTempColor)
                             .frame(maxWidth: .infinity)
                         } else {
                             Text("—")
                                 .font(.caption2)
-                                .foregroundStyle(.white.opacity(0.2))
+                                .foregroundStyle(theme.secondaryText)
                                 .frame(maxWidth: .infinity)
                         }
 
@@ -72,12 +73,12 @@ struct WeeklyExtremesPanel: View {
                                 Text(formatTemp(lo))
                             }
                             .font(.caption2)
-                            .foregroundStyle(.cyan)
+                            .foregroundStyle(theme.lowTempColor)
                             .frame(maxWidth: .infinity)
                         } else {
                             Text("—")
                                 .font(.caption2)
-                                .foregroundStyle(.white.opacity(0.2))
+                                .foregroundStyle(theme.secondaryText)
                                 .frame(maxWidth: .infinity)
                         }
 
@@ -88,7 +89,7 @@ struct WeeklyExtremesPanel: View {
                                 Text(formatWind(wind))
                             }
                             .font(.caption2)
-                            .foregroundStyle(.teal)
+                            .foregroundStyle(theme.windColor)
                             .frame(maxWidth: .infinity)
                         } else {
                             Text("—")

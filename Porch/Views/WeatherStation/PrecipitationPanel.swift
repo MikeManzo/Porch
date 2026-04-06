@@ -14,6 +14,7 @@ struct PrecipitationPanel: View {
     let porchData: PorchWeatherData?
     let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
+    @Environment(\.dashboardTheme) private var theme
 
     /// Init from PorchWeatherData (new path)
     init(porchData: PorchWeatherData) {
@@ -33,7 +34,7 @@ struct PrecipitationPanel: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "cloud.rain")
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(theme.rainColor)
                 Text("Precipitation")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
@@ -51,10 +52,10 @@ struct PrecipitationPanel: View {
                                 VStack(spacing: 4) {
                                     Text(period.value)
                                         .font(.system(.callout, design: .rounded, weight: .semibold))
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(theme.primaryText)
                                     Text(period.label)
                                         .font(.caption2)
-                                        .foregroundStyle(.white.opacity(0.4))
+                                        .foregroundStyle(theme.secondaryText)
                                 }
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
@@ -66,7 +67,7 @@ struct PrecipitationPanel: View {
             } else {
                 Text("No rain data")
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.3))
+                    .foregroundStyle(theme.secondaryText)
             }
 
             // Last rain timestamp (Ambient only)
@@ -75,10 +76,10 @@ struct PrecipitationPanel: View {
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(theme.secondaryText)
                     Text("Last rain: \(SensorFormatter.menuBarString(for: "lastRain", from: observation))")
                         .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(theme.secondaryText)
                 }
             }
         }

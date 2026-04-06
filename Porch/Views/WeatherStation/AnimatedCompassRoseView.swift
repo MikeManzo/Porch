@@ -15,6 +15,7 @@ struct AnimatedCompassRoseView: View {
     let windGust: Double?
     let isMetric: Bool
 
+    @Environment(\.dashboardTheme) private var theme
     @State private var animatedDirection: Double = 0
 
     private let size: CGFloat = 240
@@ -31,9 +32,9 @@ struct AnimatedCompassRoseView: View {
                 .stroke(
                     AngularGradient(
                         colors: [
-                            .cyan.opacity(0.15), .blue.opacity(0.3),
-                            .cyan.opacity(0.15), .blue.opacity(0.3),
-                            .cyan.opacity(0.15)
+                            theme.windColor.opacity(0.15), theme.accentColor.opacity(0.3),
+                            theme.windColor.opacity(0.15), theme.accentColor.opacity(0.3),
+                            theme.windColor.opacity(0.15)
                         ],
                         center: .center
                     ),
@@ -72,7 +73,7 @@ struct AnimatedCompassRoseView: View {
             // 10-minute average direction indicator
             if let avg = windDirAvg10m {
                 CompassTriangle()
-                    .fill(.orange.opacity(0.5))
+                    .fill(theme.windDirAvgColor.opacity(0.5))
                     .frame(width: 8, height: 8)
                     .offset(y: -(outerRadius + 6))
                     .rotationEffect(.degrees(Double(avg)))
@@ -115,7 +116,7 @@ struct AnimatedCompassRoseView: View {
                     Text(formatSpeed(gust))
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                 }
-                .foregroundStyle(.orange)
+                .foregroundStyle(theme.gustColor)
             }
         }
         .frame(width: 80, height: 80)
@@ -162,13 +163,15 @@ private struct CompassLabel {
 
 /// The main compass needle shape — an elongated diamond pointing north
 private struct CompassNeedle: View {
+    @Environment(\.dashboardTheme) private var theme
+
     var body: some View {
         ZStack {
-            // North half — bright cyan/blue
+            // North half
             CompassTriangle()
                 .fill(
                     LinearGradient(
-                        colors: [.cyan, .blue.opacity(0.8)],
+                        colors: [theme.windColor, theme.accentColor.opacity(0.8)],
                         startPoint: .top,
                         endPoint: .bottom
                     )

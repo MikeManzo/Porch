@@ -14,6 +14,7 @@ struct IndoorPanel: View {
     let porchData: PorchWeatherData?
     let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
+    @Environment(\.dashboardTheme) private var theme
 
     /// Init from PorchWeatherData (new path)
     init(porchData: PorchWeatherData) {
@@ -44,7 +45,7 @@ struct IndoorPanel: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Image(systemName: "house.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(theme.indoorColor)
                     Text("Indoor")
                         .font(.subheadline.weight(.semibold))
                     Spacer()
@@ -83,11 +84,11 @@ struct IndoorPanel: View {
                     .foregroundStyle(tint)
                 Text(label)
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(theme.secondaryText)
             }
             Text(value)
                 .font(.system(.callout, design: .rounded, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.primaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

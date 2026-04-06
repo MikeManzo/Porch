@@ -14,6 +14,7 @@ struct GardenPanel: View {
     let porchData: PorchWeatherData?
     let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
+    @Environment(\.dashboardTheme) private var theme
 
     /// Init from PorchWeatherData (new path)
     init(porchData: PorchWeatherData) {
@@ -56,7 +57,7 @@ struct GardenPanel: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Image(systemName: "leaf.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(theme.gardenColor)
                     Text("Garden & Soil")
                         .font(.subheadline.weight(.semibold))
                     Spacer()
@@ -98,11 +99,11 @@ struct GardenPanel: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(SensorFormatter.sensorDescription(for: key, unitSystem: manager.unitSystem))
                     .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(theme.secondaryText)
                     .lineLimit(1)
                 Text(SensorFormatter.menuBarString(for: key, from: data, unitSystem: manager.unitSystem))
                     .font(.system(.callout, design: .rounded, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.primaryText)
                     .lineLimit(1)
             }
 
@@ -123,11 +124,11 @@ struct GardenPanel: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(SensorFormatter.sensorDescription(for: key, unitSystem: manager.unitSystem))
                     .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(theme.secondaryText)
                     .lineLimit(1)
                 Text(SensorFormatter.menuBarString(for: key, from: obs, unitSystem: manager.unitSystem))
                     .font(.system(.callout, design: .rounded, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.primaryText)
                     .lineLimit(1)
             }
 

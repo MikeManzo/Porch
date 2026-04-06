@@ -51,6 +51,8 @@ struct WeatherStationView: View {
         }
     }
 
+    private var theme: DashboardTheme { manager.dashboardThemeID.resolved }
+
     var body: some View {
         ZStack {
             backgroundGradient
@@ -61,6 +63,7 @@ struct WeatherStationView: View {
                 emptyState
             }
         }
+        .environment(\.dashboardTheme, theme)
         .frame(minWidth: 1100, minHeight: 780)
     }
 
@@ -74,17 +77,7 @@ struct WeatherStationView: View {
                 [0.0, 0.5], [0.5, 0.5], [1.0, 0.5],
                 [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
             ],
-            colors: [
-                Color(red: 0.05, green: 0.05, blue: 0.15),
-                Color(red: 0.04, green: 0.08, blue: 0.20),
-                Color(red: 0.06, green: 0.06, blue: 0.18),
-                Color(red: 0.03, green: 0.10, blue: 0.18),
-                Color(red: 0.05, green: 0.07, blue: 0.22),
-                Color(red: 0.04, green: 0.06, blue: 0.16),
-                Color(red: 0.06, green: 0.04, blue: 0.14),
-                Color(red: 0.04, green: 0.08, blue: 0.19),
-                Color(red: 0.05, green: 0.05, blue: 0.15)
-            ]
+            colors: theme.meshColors
         )
         .ignoresSafeArea()
     }
@@ -243,14 +236,14 @@ struct WeatherStationView: View {
                 icon: "thermometer.medium",
                 valuePath: \.temperature,
                 unitSuffix: manager.unitSystem == .metric ? "°C" : "°F",
-                color: .orange,
+                color: theme.temperatureColor,
                 unitSystem: manager.unitSystem,
                 convertToMetric: { ($0 - 32) * 5.0 / 9.0 },
                 secondary: data.observation.tempInF != nil
                     ? SecondarySeries(
                         label: "Indoor",
                         valuePath: \.indoorTemp,
-                        color: .green,
+                        color: theme.indoorColor,
                         convertToMetric: { ($0 - 32) * 5.0 / 9.0 }
                     ) : nil,
                 showGlass: false
@@ -262,13 +255,13 @@ struct WeatherStationView: View {
                 icon: "humidity",
                 valuePath: \.humidityDouble,
                 unitSuffix: "%",
-                color: .cyan,
+                color: theme.humidityColor,
                 unitSystem: manager.unitSystem,
                 secondary: data.observation.humidityIn != nil
                     ? SecondarySeries(
                         label: "Indoor",
                         valuePath: \.indoorHumidityDouble,
-                        color: .green
+                        color: theme.indoorColor
                     ) : nil,
                 showGlass: false
             )
@@ -279,7 +272,7 @@ struct WeatherStationView: View {
                 icon: "barometer",
                 valuePath: \.pressure,
                 unitSuffix: manager.unitSystem == .metric ? " hPa" : " inHg",
-                color: .purple,
+                color: theme.pressureColor,
                 unitSystem: manager.unitSystem,
                 convertToMetric: { $0 * 33.8639 },
                 showGlass: false
@@ -291,13 +284,13 @@ struct WeatherStationView: View {
                 icon: "wind",
                 valuePath: \.windSpeed,
                 unitSuffix: manager.unitSystem == .metric ? " km/h" : " mph",
-                color: .cyan,
+                color: theme.windColor,
                 unitSystem: manager.unitSystem,
                 convertToMetric: { $0 * 1.60934 },
                 secondary: SecondarySeries(
                     label: "Gust",
                     valuePath: \.windGust,
-                    color: .orange,
+                    color: theme.gustColor,
                     convertToMetric: { $0 * 1.60934 }
                 ),
                 showGlass: false
@@ -309,13 +302,13 @@ struct WeatherStationView: View {
                 icon: "sun.max.fill",
                 valuePath: \.solarRadiation,
                 unitSuffix: " W/m²",
-                color: .yellow,
+                color: theme.solarColor,
                 unitSystem: manager.unitSystem,
                 secondary: data.observation.uv != nil
                     ? SecondarySeries(
                         label: "UV",
                         valuePath: \.uvDouble,
-                        color: .purple
+                        color: theme.uvColor
                     ) : nil,
                 showGlass: false
             )
@@ -326,7 +319,7 @@ struct WeatherStationView: View {
                 icon: "cloud.rain",
                 valuePath: \.dailyRain,
                 unitSuffix: manager.unitSystem == .metric ? " mm" : "\"",
-                color: .blue,
+                color: theme.rainColor,
                 unitSystem: manager.unitSystem,
                 convertToMetric: { $0 * 25.4 },
                 yFloorZero: true,
@@ -339,7 +332,7 @@ struct WeatherStationView: View {
                 icon: "aqi.medium",
                 valuePath: \.pm25,
                 unitSuffix: " µg/m³",
-                color: .green,
+                color: theme.pm25Color,
                 unitSystem: manager.unitSystem,
                 showGlass: false
             )
@@ -354,7 +347,7 @@ struct WeatherStationView: View {
                 HStack {
                     Text(data.info.name)
                         .font(.headline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.primaryText)
 
                     Image(systemName: sourceIcon)
                         .foregroundStyle(statusColor)
@@ -364,11 +357,11 @@ struct WeatherStationView: View {
                 if let porchData = manager.porchWeatherData {
                     Text("Updated \(porchData.observationDateFormatted)")
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(theme.secondaryText)
                 } else {
                     Text("Updated \(data.observation.observationDateFormatted)")
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(theme.secondaryText)
                 }
             }
 
@@ -379,7 +372,7 @@ struct WeatherStationView: View {
             } label: {
                 Image(systemName: "xmark.circle.fill")
                     .font(.title2)
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(theme.secondaryText)
             }
             .buttonStyle(.plain)
         }
@@ -420,11 +413,11 @@ struct WeatherStationView: View {
         VStack(spacing: 12) {
             Image(systemName: "cloud.sun")
                 .font(.system(size: 48))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(theme.secondaryText)
                 .symbolRenderingMode(.hierarchical)
             Text("Waiting for weather data…")
                 .font(.title3)
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(theme.secondaryText)
         }
     }
 }

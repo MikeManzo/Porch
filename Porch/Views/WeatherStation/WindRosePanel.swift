@@ -10,6 +10,7 @@ import SwiftUI
 /// Glass panel wrapping WindRoseView with a time range picker and data loading
 struct WindRosePanel: View {
     @EnvironmentObject var manager: WeatherManager
+    @Environment(\.dashboardTheme) private var theme
     @State private var timeRange: ChartTimeRange = .day
     @State private var snapshots: [WeatherSnapshot] = []
 
@@ -18,7 +19,7 @@ struct WindRosePanel: View {
             // Header with time range picker
             HStack {
                 Image(systemName: "tornado")
-                    .foregroundStyle(.cyan)
+                    .foregroundStyle(theme.windColor)
                 Text("Wind Rose")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
