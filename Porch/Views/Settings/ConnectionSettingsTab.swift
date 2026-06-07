@@ -267,7 +267,7 @@ struct ConnectionSettingsTab: View {
                         if scanner.isScanning {
                             scanner.stopScan()
                         } else {
-                            scanner.startScan()
+                            scanner.startScan(knownHost: ecowittHostInput)
                         }
                     } label: {
                         Label(
@@ -291,34 +291,42 @@ struct ConnectionSettingsTab: View {
 
                 if !scanner.discoveredGateways.isEmpty {
                     ForEach(scanner.discoveredGateways) { gateway in
-                        Button {
-                            ecowittHostInput = gateway.host
-                            ecowittPortInput = "\(gateway.port)"
-                        } label: {
-                            HStack {
-                                Image(systemName: "wifi.router")
-                                    .foregroundStyle(.green)
-                                VStack(alignment: .leading) {
-                                    Text(gateway.model)
-                                        .font(.body)
-                                    Text(gateway.host)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if ecowittHostInput == gateway.host {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(.green)
-                                }
+                        HStack {
+                            Image(systemName: "wifi.router")
+                                .foregroundStyle(.green)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(gateway.model)
+                                    .font(.body)
+                                Text(gateway.host)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
+                            Spacer()
+                            if ecowittHostInput == gateway.host {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                            }
+                            Button("Connect") {
+                                selectAndConnect(gateway)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
                         }
-                        .buttonStyle(.plain)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectGateway(gateway)
+                        }
                     }
                 } else if !scanner.isScanning && scanner.scanProgress >= 1.0 {
                     Text("No Ecowitt gateways found on local network")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+            }
+            .onChange(of: scanner.discoveredGateways) {
+                // Auto-fill when exactly one device is found and no host is configured yet
+                guard scanner.discoveredGateways.count == 1, ecowittHostInput.isEmpty else { return }
+                selectGateway(scanner.discoveredGateways[0])
             }
 
             Section("Station Location") {
@@ -490,7 +498,9 @@ struct ConnectionSettingsTab: View {
         case .ecowittLocal:
             return ecowittHostInput.isEmpty
         case .auto:
-            return ecowittHostInput.isEmpty || appKeyInput.isEmpty || apiKeyInput.isEmpty
+            let hasLocal = !ecowittHostInput.isEmpty
+            let hasCloud = !appKeyInput.isEmpty && !apiKeyInput.isEmpty
+            return !hasLocal && !hasCloud
         }
     }
 
@@ -503,6 +513,18 @@ struct ConnectionSettingsTab: View {
         manager.ecowittStationName = ecowittStationNameInput
         manager.manualLatitude = latitudeInput
         manager.manualLongitude = longitudeInput
+    }
+
+    private func selectGateway(_ gateway: DiscoveredGateway) {
+        ecowittHostInput = gateway.host
+        ecowittPortInput = "\(gateway.port)"
+    }
+
+    private func selectAndConnect(_ gateway: DiscoveredGateway) {
+        selectGateway(gateway)
+        applyInputs()
+        scanner.stopScan()
+        manager.connect()
     }
 
     private func stepRow(_ number: Int, _ text: LocalizedStringKey) -> some View {

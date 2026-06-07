@@ -25,7 +25,8 @@ struct DiscoveredGateway: Identifiable, Hashable {
     }
 }
 
-/// Scans the local /24 subnet for Ecowitt gateways
+/// Scans the local /24 subnet for Ecowitt gateways.
+/// All 254 hosts are probed concurrently for fast discovery (~1.5 s worst case).
 @MainActor
 class EcowittScanner: ObservableObject {
 
@@ -40,14 +41,24 @@ class EcowittScanner: ObservableObject {
         category: "EcowittScanner"
     )
 
-    func startScan() {
+    /// Start a network scan.
+    /// If `knownHost` is provided, it is probed first so a previously-connected
+    /// gateway appears in results almost instantly before the full sweep begins.
+    func startScan(knownHost: String = "") {
         stopScan()
         discoveredGateways = []
         isScanning = true
         scanProgress = 0
 
         scanTask = Task {
-            await performScan()
+            // Quick-check the previously known host for a near-instant result
+            if !knownHost.isEmpty {
+                if let gateway = await Self.probeGateway(at: knownHost) {
+                    discoveredGateways.append(gateway)
+                }
+            }
+            let alreadyFound = Set(discoveredGateways.map(\.host))
+            await performScan(skipHosts: alreadyFound)
             isScanning = false
         }
     }
@@ -60,7 +71,8 @@ class EcowittScanner: ObservableObject {
 
     // MARK: - Private
 
-    private func performScan() async {
+    /// Probes all 254 hosts on the local subnet concurrently.
+    private func performScan(skipHosts: Set<String> = []) async {
         guard let subnet = Self.localSubnet() else {
             Self.logger.warning("Could not determine local subnet")
             return
@@ -68,29 +80,29 @@ class EcowittScanner: ObservableObject {
 
         Self.logger.info("Scanning subnet \(subnet).0/24")
 
-        let batchSize = 20
-        let totalIPs = 254
+        let ips = (1...254)
+            .map { "\(subnet).\($0)" }
+            .filter { !skipHosts.contains($0) }
 
-        for batchStart in stride(from: 1, through: totalIPs, by: batchSize) {
-            guard !Task.isCancelled else { return }
+        // Total is always 254 so progress is relative to the full subnet
+        let total = Double(254)
+        var completed = Double(skipHosts.count)
 
-            let batchEnd = min(batchStart + batchSize - 1, totalIPs)
-            let ips = (batchStart...batchEnd).map { "\(subnet).\($0)" }
-
-            await withTaskGroup(of: DiscoveredGateway?.self) { group in
-                for ip in ips {
-                    group.addTask {
-                        await Self.probeGateway(at: ip)
-                    }
-                }
-                for await result in group {
-                    if let gateway = result {
-                        discoveredGateways.append(gateway)
-                    }
+        await withTaskGroup(of: DiscoveredGateway?.self) { group in
+            for ip in ips {
+                group.addTask {
+                    await Self.probeGateway(at: ip)
                 }
             }
 
-            scanProgress = Double(batchEnd) / Double(totalIPs)
+            for await result in group {
+                if Task.isCancelled { continue }
+                completed += 1
+                scanProgress = completed / total
+                if let gateway = result {
+                    discoveredGateways.append(gateway)
+                }
+            }
         }
 
         scanProgress = 1.0
@@ -101,7 +113,7 @@ class EcowittScanner: ObservableObject {
         guard let url = URL(string: "http://\(ip):\(port)/get_livedata_info") else { return nil }
 
         var request = URLRequest(url: url)
-        request.timeoutInterval = 2
+        request.timeoutInterval = 1.5
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
