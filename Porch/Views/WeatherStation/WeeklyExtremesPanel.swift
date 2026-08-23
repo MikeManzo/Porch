@@ -105,7 +105,7 @@ struct WeeklyExtremesPanel: View {
         }
     }
 
-    // MARK: - Helpers
+    // MARK:  Helpers
 
     private func shortDay(_ dateStr: String) -> String {
         let formatter = DateFormatter()

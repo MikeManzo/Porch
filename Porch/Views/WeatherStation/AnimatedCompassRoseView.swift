@@ -7,23 +7,26 @@
 
 import SwiftUI
 
-/// A large animated compass rose showing wind direction, speed, and gust
+/// An animated compass rose showing wind direction, speed, and gust.
+/// `scale` renders every dimension proportionally so it stays crisp at any size,
+/// instead of relying on `.scaleEffect` blur.
 struct AnimatedCompassRoseView: View {
     let windDirection: Int
     let windDirAvg10m: Int?
     let windSpeed: Double?
     let windGust: Double?
     let isMetric: Bool
+    var scale: CGFloat = 1.0
 
     @Environment(\.dashboardTheme) private var theme
     @State private var animatedDirection: Double = 0
 
-    private let size: CGFloat = 240
-    private let outerRadius: CGFloat = 112
-    private let labelRadius: CGFloat = 92
-    private let tickOuterRadius: CGFloat = 108
-    private let majorTickLength: CGFloat = 12
-    private let minorTickLength: CGFloat = 6
+    private var size: CGFloat { 240 * scale }
+    private var outerRadius: CGFloat { 112 * scale }
+    private var labelRadius: CGFloat { 92 * scale }
+    private var tickOuterRadius: CGFloat { 108 * scale }
+    private var majorTickLength: CGFloat { 12 * scale }
+    private var minorTickLength: CGFloat { 6 * scale }
 
     var body: some View {
         ZStack {
@@ -52,7 +55,7 @@ struct AnimatedCompassRoseView: View {
                 let isMajor = index % 3 == 0
                 Rectangle()
                     .fill(isMajor ? Color.white.opacity(0.5) : Color.white.opacity(0.15))
-                    .frame(width: isMajor ? 2 : 1, height: isMajor ? majorTickLength : minorTickLength)
+                    .frame(width: isMajor ? 2 * scale : 1 * scale, height: isMajor ? majorTickLength : minorTickLength)
                     .offset(y: -(tickOuterRadius - (isMajor ? majorTickLength : minorTickLength) / 2))
                     .rotationEffect(.degrees(Double(index) * 10))
             }
@@ -61,8 +64,8 @@ struct AnimatedCompassRoseView: View {
             ForEach(compassLabels, id: \.label) { point in
                 Text(point.label)
                     .font(point.isCardinal
-                        ? .system(size: 15, weight: .bold, design: .rounded)
-                        : .system(size: 10, weight: .medium, design: .rounded))
+                        ? .system(size: 15 * scale, weight: .bold, design: .rounded)
+                        : .system(size: 10 * scale, weight: .medium, design: .rounded))
                     .foregroundStyle(point.isCardinal ? .white.opacity(0.9) : .white.opacity(0.45))
                     .offset(
                         x: labelRadius * CGFloat(sin(point.angle * .pi / 180)),
@@ -74,13 +77,13 @@ struct AnimatedCompassRoseView: View {
             if let avg = windDirAvg10m {
                 CompassTriangle()
                     .fill(theme.windDirAvgColor.opacity(0.5))
-                    .frame(width: 8, height: 8)
-                    .offset(y: -(outerRadius + 6))
+                    .frame(width: 8 * scale, height: 8 * scale)
+                    .offset(y: -(outerRadius + 6 * scale))
                     .rotationEffect(.degrees(Double(avg)))
             }
 
             // Main direction arrow (animated)
-            CompassNeedle()
+            CompassNeedle(scale: scale)
                 .rotationEffect(.degrees(animatedDirection))
 
             // Center hub with speed display
@@ -98,32 +101,32 @@ struct AnimatedCompassRoseView: View {
         }
     }
 
-    // MARK: - Center Hub
+    // MARK:  Center Hub
 
     private var centerHub: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 2 * scale) {
             Text(formatSpeed(windSpeed))
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.system(size: 28 * scale, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .contentTransition(.numericText())
             Text(isMetric ? "km/h" : "mph")
-                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .font(.system(size: 10 * scale, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.5))
             if let gust = windGust, gust > 0 {
-                HStack(spacing: 2) {
+                HStack(spacing: 2 * scale) {
                     Image(systemName: "wind.circle")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 10 * scale, weight: .semibold))
                     Text(formatSpeed(gust))
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.system(size: 12 * scale, weight: .semibold, design: .rounded))
                 }
                 .foregroundStyle(theme.gustColor)
             }
         }
-        .frame(width: 80, height: 80)
+        .frame(width: 80 * scale, height: 80 * scale)
         .background(.ultraThinMaterial, in: Circle())
     }
 
-    // MARK: - Helpers
+    // MARK:  Helpers
 
     private var compassLabels: [CompassLabel] {
         [
@@ -153,7 +156,7 @@ struct AnimatedCompassRoseView: View {
     }
 }
 
-// MARK: - Supporting Types
+// MARK:  Supporting Types
 
 private struct CompassLabel {
     let label: String
@@ -163,6 +166,7 @@ private struct CompassLabel {
 
 /// The main compass needle shape — an elongated diamond pointing north
 private struct CompassNeedle: View {
+    var scale: CGFloat = 1.0
     @Environment(\.dashboardTheme) private var theme
 
     var body: some View {
@@ -176,8 +180,8 @@ private struct CompassNeedle: View {
                         endPoint: .bottom
                     )
                 )
-                .frame(width: 16, height: 65)
-                .offset(y: -32)
+                .frame(width: 16 * scale, height: 65 * scale)
+                .offset(y: -32 * scale)
 
             // South half — subtle gray
             CompassTriangle()
@@ -188,14 +192,14 @@ private struct CompassNeedle: View {
                         endPoint: .bottom
                     )
                 )
-                .frame(width: 12, height: 45)
+                .frame(width: 12 * scale, height: 45 * scale)
                 .rotationEffect(.degrees(180))
-                .offset(y: 22)
+                .offset(y: 22 * scale)
 
             // Center dot
             Circle()
                 .fill(.white)
-                .frame(width: 6, height: 6)
+                .frame(width: 6 * scale, height: 6 * scale)
         }
     }
 }

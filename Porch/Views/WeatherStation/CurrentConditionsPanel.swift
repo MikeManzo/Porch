@@ -167,7 +167,7 @@ struct CurrentConditionsPanel: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
     }
 
-    // MARK: - Forecast Popover
+    // MARK:  Forecast Popover
 
     private func forecastPopover(for day: DailyForecast) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -275,7 +275,7 @@ struct CurrentConditionsPanel: View {
         .frame(width: 280)
     }
 
-    // MARK: - Helpers
+    // MARK:  Helpers
 
     private func extremeStat(icon: String, label: String, value: String, tint: Color) -> some View {
         HStack(spacing: 4) {
@@ -357,7 +357,7 @@ struct CurrentConditionsPanel: View {
         return sensorConditionColor
     }
 
-    // MARK: - Station Sensor Fallbacks
+    // MARK:  Station Sensor Fallbacks
 
     private var sensorConditionIcon: String {
         let hasRain: Bool

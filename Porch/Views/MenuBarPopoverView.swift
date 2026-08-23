@@ -31,7 +31,7 @@ struct MenuBarPopoverView: View {
         .frame(width: 290)
     }
 
-    // MARK: - Connected Content
+    // MARK:  Connected Content
 
     @ViewBuilder
     private func connectedContent(data: AmbientWeatherData) -> some View {
@@ -76,6 +76,12 @@ struct MenuBarPopoverView: View {
         } else {
             QuickStatsBar(observation: data.observation)
         }
+
+        // Station-specific sensors surfaced above the fold — indoor climate, soil,
+        // lightning, air quality. This is what differentiates Porch from a generic
+        // weather app, so it shouldn't be hidden behind "All Sensors".
+        StationPulseView(porchData: manager.porchWeatherData ?? makeFallbackPorchData(from: data))
+            .padding(.top, 8)
 
         Divider()
             .padding(.top, 8)
@@ -124,7 +130,7 @@ struct MenuBarPopoverView: View {
         .frame(maxHeight: 400)
     }
 
-    // MARK: - Multi-Station Picker
+    // MARK:  Multi-Station Picker
 
     private var stationPicker: some View {
         Picker("Station", selection: Binding(
@@ -140,7 +146,7 @@ struct MenuBarPopoverView: View {
         .padding(.horizontal, 12)
     }
 
-    // MARK: - Empty State
+    // MARK:  Empty State
 
     private var emptyStateView: some View {
         VStack(spacing: 12) {
@@ -176,65 +182,72 @@ struct MenuBarPopoverView: View {
         }
     }
 
-    // MARK: - Footer
+    // MARK:  Footer
 
     private var footerView: some View {
         HStack {
-            Button {
-                NSApp.keyWindow?.close()
-                openSettings()
-                NSApp.activate(ignoringOtherApps: true)
-            } label: {
-                Label("Settings", systemImage: "gear")
-            }
-            .buttonStyle(.borderless)
+            Spacer(minLength: 0)
 
-            Spacer()
+            GlassEffectContainer(spacing: 4) {
+                HStack(spacing: 4) {
+                    footerButton(icon: "gear", help: "Settings") {
+                        NSApp.keyWindow?.close()
+                        openSettings()
+                        NSApp.activate(ignoringOtherApps: true)
+                    }
 
-            Button {
-                NSApp.keyWindow?.close()
-                // Focus existing station window or open a new one
-                if let existing = NSApp.windows.first(where: { $0.title == "Weather Station" }) {
-                    existing.makeKeyAndOrderFront(nil)
-                } else {
-                    openWindow(id: "weather-station")
+                    footerButton(icon: "gauge.with.dots.needle.67percent", help: "Weather Station", disabled: manager.weatherData == nil) {
+                        NSApp.keyWindow?.close()
+                        // Focus existing station window or open a new one
+                        if let existing = NSApp.windows.first(where: { $0.title == "Weather Station" }) {
+                            existing.makeKeyAndOrderFront(nil)
+                        } else {
+                            openWindow(id: "weather-station")
+                        }
+                        NSApp.activate(ignoringOtherApps: true)
+                    }
+
+                    if appUpdater.updateAvailable {
+                        footerButton(icon: "arrow.down.circle.fill", help: "Update Available", tint: .green) {
+                            NSApp.keyWindow?.close()
+                            appUpdater.checkForUpdates()
+                            NSApp.activate(ignoringOtherApps: true)
+                        }
+                    }
+
+                    footerButton(icon: "power", help: "Quit Porch") {
+                        NSApplication.shared.terminate(nil)
+                    }
                 }
-                NSApp.activate(ignoringOtherApps: true)
-            } label: {
-                Label("Station", systemImage: "gauge.with.dots.needle.67percent")
-            }
-            .buttonStyle(.borderless)
-            .disabled(manager.weatherData == nil)
-
-            if appUpdater.updateAvailable {
-                Spacer()
-
-                Button {
-                    NSApp.keyWindow?.close()
-                    appUpdater.checkForUpdates()
-                    NSApp.activate(ignoringOtherApps: true)
-                } label: {
-                    Label("Update", systemImage: "arrow.down.circle.fill")
-                        .foregroundStyle(.green)
-                }
-                .buttonStyle(.borderless)
+                .padding(4)
+                .glassEffect(.regular, in: .rect(cornerRadius: 18))
             }
 
-            Spacer()
-
-            Button {
-                NSApplication.shared.terminate(nil)
-            } label: {
-                Label("Quit", systemImage: "power")
-            }
-            .buttonStyle(.borderless)
+            Spacer(minLength: 0)
         }
-        .font(.body)
         .padding(.horizontal, 12)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
     }
 
-    // MARK: - Fallback
+    private func footerButton(
+        icon: String,
+        help: String,
+        tint: Color = .primary,
+        disabled: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(tint)
+                .frame(width: 34, height: 34)
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+        .help(help)
+    }
+
+    // MARK:  Fallback
 
     /// Creates a minimal PorchWeatherData from AmbientWeatherData when no porchWeatherData exists
     private func makeFallbackPorchData(from data: AmbientWeatherData) -> PorchWeatherData {
@@ -250,7 +263,7 @@ struct MenuBarPopoverView: View {
         return porch
     }
 }
-// MARK: - Preview
+// MARK:  Preview
 
 #if DEBUG
 #Preview("Connected") {

@@ -135,7 +135,7 @@ struct AtmosphericPanel: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
     }
 
-    // MARK: - Helpers
+    // MARK:  Helpers
 
     private func formatPressure(_ inHg: Double) -> String {
         if isMetric {

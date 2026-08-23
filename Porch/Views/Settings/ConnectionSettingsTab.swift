@@ -80,7 +80,7 @@ struct ConnectionSettingsTab: View {
 
     var body: some View {
         Form {
-            // MARK: - Station Brand Picker
+            // MARK:  Station Brand Picker
 
             Section("Station Brand") {
                 Picker("Brand", selection: $manager.selectedBrand) {
@@ -107,13 +107,13 @@ struct ConnectionSettingsTab: View {
                 }
             }
 
-            // MARK: - Legacy Brand Configuration
+            // MARK:  Legacy Brand Configuration
 
             if isLegacyBrand {
                 legacyDataSourceSection
             }
 
-            // MARK: - Source Configuration
+            // MARK:  Source Configuration
 
             if manager.selectedBrand == .ecowitt || (isLegacyBrand && manager.dataSourceMode == .auto) {
                 ecowittSection
@@ -122,17 +122,17 @@ struct ConnectionSettingsTab: View {
                 ambientSection
             }
 
-            // MARK: - Generic Brand Configuration
+            // MARK:  Generic Brand Configuration
 
             if !isLegacyBrand {
                 genericBrandSection
             }
 
-            // MARK: - Connection Controls (shared)
+            // MARK:  Connection Controls (shared)
 
             connectionSection
 
-            // MARK: - Discovered Station Info
+            // MARK:  Discovered Station Info
 
             if manager.weatherData != nil {
                 Section("Connected Station") {
@@ -163,7 +163,7 @@ struct ConnectionSettingsTab: View {
         }
     }
 
-    // MARK: - Legacy Data Source Toggle (Ecowitt/Ambient only)
+    // MARK:  Legacy Data Source Toggle (Ecowitt/Ambient only)
 
     private var legacyDataSourceSection: some View {
         Section("Data Source") {
@@ -198,7 +198,7 @@ struct ConnectionSettingsTab: View {
         }
     }
 
-    // MARK: - Ambient Weather Section
+    // MARK:  Ambient Weather Section
 
     private var ambientSection: some View {
         Section {
@@ -246,7 +246,7 @@ struct ConnectionSettingsTab: View {
         }
     }
 
-    // MARK: - Ecowitt Local Section
+    // MARK:  Ecowitt Local Section
 
     private var ecowittSection: some View {
         Group {
@@ -373,7 +373,7 @@ struct ConnectionSettingsTab: View {
         }
     }
 
-    // MARK: - Generic Brand Configuration (for new brands)
+    // MARK:  Generic Brand Configuration (for new brands)
 
     private var genericBrandSection: some View {
         let brand = manager.selectedBrand
@@ -407,7 +407,7 @@ struct ConnectionSettingsTab: View {
         }
     }
 
-    // MARK: - Connection Section (shared)
+    // MARK:  Connection Section (shared)
 
     private var connectionSection: some View {
         Section("Connection") {
@@ -457,7 +457,7 @@ struct ConnectionSettingsTab: View {
         }
     }
 
-    // MARK: - Helpers
+    // MARK:  Helpers
 
     private var connectButtonLabel: String {
         if !isLegacyBrand {

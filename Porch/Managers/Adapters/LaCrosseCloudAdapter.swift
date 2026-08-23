@@ -12,7 +12,7 @@ import PorchStationKit
 @MainActor
 final class LaCrosseCloudAdapter: StationAdapter, @unchecked Sendable {
 
-    // MARK: - StationAdapter Identity
+    // MARK:  StationAdapter Identity
 
     static let brand: StationBrand = .lacrosse
     static let connectionType: ConnectionType = .cloud
@@ -46,14 +46,14 @@ final class LaCrosseCloudAdapter: StationAdapter, @unchecked Sendable {
         ConfigurationField(id: "deviceID", label: "Device ID", placeholder: "Your device ID", isRequired: false)
     ]
 
-    // MARK: - State
+    // MARK:  State
 
     private var observationContinuation: AsyncStream<PorchWeatherData>.Continuation?
     private var statusContinuation: AsyncStream<StationConnectionStatus>.Continuation?
 
     private(set) var isConnected = false
 
-    // MARK: - Streams
+    // MARK:  Streams
 
     lazy var observations: AsyncStream<PorchWeatherData> = {
         AsyncStream { [weak self] continuation in
@@ -67,7 +67,7 @@ final class LaCrosseCloudAdapter: StationAdapter, @unchecked Sendable {
         }
     }()
 
-    // MARK: - Connection
+    // MARK:  Connection
 
     func connect(configuration: StationConfiguration) async throws {
         statusContinuation?.yield(.failed("La Crosse Technology support coming soon"))

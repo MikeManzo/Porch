@@ -15,7 +15,7 @@ import WeatherKit
 import CoreLocation
 import MapKit
 
-// MARK: - Data Source Mode
+// MARK:  Data Source Mode
 
 /// Which weather data source to use
 enum DataSourceMode: String {
@@ -31,7 +31,7 @@ enum ActiveSource: String {
     case none = "None"
 }
 
-// MARK: - Daily Extreme Record
+// MARK:  Daily Extreme Record
 
 /// A single day's high/low values for the weekly extremes history
 struct DailyExtremeRecord: Codable, Identifiable {
@@ -44,7 +44,7 @@ struct DailyExtremeRecord: Codable, Identifiable {
     var highWind: Double?
 }
 
-// MARK: - Snooze Types
+// MARK:  Snooze Types
 
 /// Describes how an alert is currently snoozed
 enum SnoozeKind: Codable, Equatable {
@@ -58,7 +58,7 @@ struct SnoozeEntry: Codable, Equatable {
     var hasCleared: Bool
 }
 
-// MARK: - Notification Delegate
+// MARK:  Notification Delegate
 
 /// Lightweight delegate that forwards notification actions back to WeatherManager
 final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
@@ -104,14 +104,14 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
 @MainActor
 class WeatherManager: ObservableObject {
 
-    // MARK: - Published WebSocket State
+    // MARK:  Published WebSocket State
 
     @Published private(set) var connectionStatus: SocketStatus = .disconnected
     @Published private(set) var weatherData: AmbientWeatherData?
     @Published private(set) var connectionError: Error?
     @Published private(set) var activeDataSource: ActiveSource = .none
 
-    // MARK: - Multi-Station Support
+    // MARK:  Multi-Station Support
 
     /// All discovered stations keyed by stationID
     @Published private(set) var allStations: [String: AmbientWeatherData] = [:]
@@ -129,7 +129,7 @@ class WeatherManager: ObservableObject {
     /// Whether multiple stations are available
     var hasMultipleStations: Bool { allStations.count > 1 }
 
-    // MARK: - Pressure Trend
+    // MARK:  Pressure Trend
 
     @Published private(set) var pressureTrend: PressureTrend = .steady
     private var previousPressure: Double?
@@ -146,7 +146,7 @@ class WeatherManager: ObservableObject {
         }
     }
 
-    // MARK: - Daily Extremes
+    // MARK:  Daily Extremes
 
     @Published private(set) var dailyHighTemp: Double?
     @Published private(set) var dailyLowTemp: Double?
@@ -156,7 +156,7 @@ class WeatherManager: ObservableObject {
     @Published private(set) var extremesHistory: [DailyExtremeRecord] = []
     private var extremesDate: String = "" // tracks which day we're on
 
-    // MARK: - Low Battery
+    // MARK:  Low Battery
 
     /// Cached low-battery sensor keys, updated each observation
     @Published private(set) var lowBatterySensors: [String] = []
@@ -201,12 +201,12 @@ class WeatherManager: ObservableObject {
         lowBatterySensors = lowKeys
     }
 
-    // MARK: - Severe Weather (WeatherKit)
+    // MARK:  Severe Weather (WeatherKit)
 
     /// Active weather alerts from WeatherKit, filtered to non-expired
     @Published private(set) var activeWeatherAlerts: [WeatherAlert] = []
 
-    // MARK: - User Preferences (persisted via UserDefaults)
+    // MARK:  User Preferences (persisted via UserDefaults)
 
     @Published var applicationKey: String = UserDefaults.standard.string(forKey: "applicationKey") ?? "" {
         didSet { UserDefaults.standard.set(applicationKey, forKey: "applicationKey") }
@@ -214,7 +214,7 @@ class WeatherManager: ObservableObject {
     @Published var apiKeysRaw: String = UserDefaults.standard.string(forKey: "apiKeysRaw") ?? "" {
         didSet { UserDefaults.standard.set(apiKeysRaw, forKey: "apiKeysRaw") }
     }
-    // MARK: - Data Source
+    // MARK:  Data Source
 
     @Published var dataSourceMode: DataSourceMode = DataSourceMode(rawValue: UserDefaults.standard.string(forKey: "dataSourceMode") ?? "") ?? .auto {
         didSet { UserDefaults.standard.set(dataSourceMode.rawValue, forKey: "dataSourceMode") }
@@ -268,7 +268,7 @@ class WeatherManager: ObservableObject {
         didSet { UserDefaults.standard.set(dashboardThemeID.rawValue, forKey: "dashboardThemeID") }
     }
 
-    // MARK: - Quick Stats Customization
+    // MARK:  Quick Stats Customization
 
     @Published var quickStatKeys: [String] = {
         if let data = UserDefaults.standard.data(forKey: "quickStatKeys"),
@@ -284,7 +284,7 @@ class WeatherManager: ObservableObject {
         }
     }
 
-    // MARK: - Alert Thresholds
+    // MARK:  Alert Thresholds
 
     @Published var highTempAlert: Double = UserDefaults.standard.double(forKey: "highTempAlert") {
         didSet { UserDefaults.standard.set(highTempAlert, forKey: "highTempAlert") }
@@ -349,7 +349,7 @@ class WeatherManager: ObservableObject {
         didSet { UserDefaults.standard.set(defaultReAlertInterval, forKey: "defaultReAlertInterval") }
     }
 
-    // MARK: - Deferred Bindings
+    // MARK:  Deferred Bindings
 
     /// Creates a Binding that defers the property set to the next run loop,
     /// preventing "Publishing changes from within view updates" warnings.
@@ -364,7 +364,7 @@ class WeatherManager: ObservableObject {
         )
     }
 
-    // MARK: - Station Adapter (New Multi-Station System)
+    // MARK:  Station Adapter (New Multi-Station System)
 
     /// The latest PorchWeatherData from the active adapter (canonical model)
     @Published private(set) var porchWeatherData: PorchWeatherData?
@@ -375,7 +375,7 @@ class WeatherManager: ObservableObject {
     private var adapterObservationTask: Task<Void, Never>?
     private var adapterStatusTask: Task<Void, Never>?
 
-    // MARK: - Private
+    // MARK:  Private
 
     private var socket: AmbientWebSocket?
     private var ecowittClient: EcowittClient?
@@ -403,7 +403,7 @@ class WeatherManager: ObservableObject {
         }
     }
 
-    // MARK: - Init
+    // MARK:  Init
 
     init() {
         selectedStationID = UserDefaults.standard.string(forKey: "selectedStationID")
@@ -470,7 +470,7 @@ class WeatherManager: ObservableObject {
         }
     }
 
-    // MARK: - Computed Properties
+    // MARK:  Computed Properties
 
     /// Parse comma-separated API keys
     var apiKeys: [String] {
@@ -585,7 +585,7 @@ class WeatherManager: ObservableObject {
         isEcowittConfigured && isConfigured
     }
 
-    // MARK: - Connection Management
+    // MARK:  Connection Management
 
     func connect() {
         // For brands beyond Ecowitt/Ambient, use the generic adapter path
@@ -706,7 +706,7 @@ class WeatherManager: ObservableObject {
         }
     }
 
-    // MARK: - Auto Mode
+    // MARK:  Auto Mode
 
     /// Auto mode: probe the Ecowitt gateway first, fall back to Ambient cloud.
     /// Station selection is handled by auto-select when data arrives.
@@ -880,7 +880,7 @@ class WeatherManager: ObservableObject {
         reverseGeocodedLocation = ""
     }
 
-    // MARK: - Station Adapter System
+    // MARK:  Station Adapter System
 
     /// Register all shipped station adapters at launch
     private func registerStationAdapters() {
@@ -1011,7 +1011,7 @@ class WeatherManager: ObservableObject {
         weatherData = allStations[stationID]
     }
 
-    // MARK: - Observation Processing
+    // MARK:  Observation Processing
 
     private func processNewObservation(_ observation: AmbientLastData) {
         updatePressureTrend(observation)
@@ -1043,7 +1043,7 @@ class WeatherManager: ObservableObject {
         }
     }
 
-    // MARK: - Pressure Trend
+    // MARK:  Pressure Trend
 
     private func updatePressureTrend(_ observation: AmbientLastData) {
         guard let current = observation.baromRelIn else { return }
@@ -1060,7 +1060,7 @@ class WeatherManager: ObservableObject {
         previousPressure = current
     }
 
-    // MARK: - Daily Extremes
+    // MARK:  Daily Extremes
 
     private func updateDailyExtremes(_ observation: AmbientLastData) {
         let today = formattedToday()
@@ -1135,7 +1135,7 @@ class WeatherManager: ObservableObject {
         }
     }
 
-    // MARK: - Notification Alerts
+    // MARK:  Notification Alerts
 
     private func checkAlerts(_ observation: AmbientLastData) {
         // Track which conditions are currently active for "Until Cleared" logic
@@ -1345,7 +1345,7 @@ class WeatherManager: ObservableObject {
         }
     }
 
-    // MARK: - WeatherKit Severe Weather Polling
+    // MARK:  WeatherKit Severe Weather Polling
 
     private var hasFetchedWeatherKitOnce = false
 
@@ -1417,7 +1417,7 @@ class WeatherManager: ObservableObject {
     }
 }
 
-// MARK: - Preview Support
+// MARK:  Preview Support
 
 #if DEBUG
 extension WeatherManager {

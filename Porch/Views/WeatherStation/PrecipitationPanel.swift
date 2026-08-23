@@ -87,7 +87,7 @@ struct PrecipitationPanel: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
     }
 
-    // MARK: - Rain Periods
+    // MARK:  Rain Periods
 
     private func buildRainPeriods() -> [(label: String, value: String)] {
         if let porchData {

@@ -8,7 +8,7 @@
 import SwiftUI
 import Combine
 
-// MARK: - Daily Forecast Model
+// MARK:  Daily Forecast Model
 
 struct DailyForecast: Identifiable {
     let id = UUID()
@@ -61,7 +61,7 @@ struct DailyForecast: Identifiable {
         }
     }
 
-    // MARK: - WMO Weather Code Mappings
+    // MARK:  WMO Weather Code Mappings
 
     static func wmoIcon(for code: Int) -> String {
         switch code {
@@ -147,7 +147,7 @@ struct DailyForecast: Identifiable {
     }
 }
 
-// MARK: - Current Weather Model
+// MARK:  Current Weather Model
 
 struct CurrentWeather {
     let weatherCode: Int
@@ -187,7 +187,7 @@ struct CurrentWeather {
     }
 }
 
-// MARK: - Forecast Manager
+// MARK:  Forecast Manager
 
 @MainActor
 class ForecastManager: ObservableObject {
@@ -313,7 +313,7 @@ class ForecastManager: ObservableObject {
     }
 }
 
-// MARK: - Open-Meteo JSON Response
+// MARK:  Open-Meteo JSON Response
 
 private struct OpenMeteoResponse: Decodable {
     let current: CurrentData?
@@ -343,7 +343,7 @@ private struct OpenMeteoResponse: Decodable {
     }
 }
 
-// MARK: - Safe Array Subscript
+// MARK:  Safe Array Subscript
 
 private extension Array {
     subscript(safe index: Int) -> Element? {

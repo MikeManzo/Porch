@@ -142,7 +142,7 @@ struct EnvironmentPanel: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
     }
 
-    // MARK: - Helpers
+    // MARK:  Helpers
 
     private func envStat(icon: String, label: String, value: String, tint: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {

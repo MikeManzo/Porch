@@ -38,7 +38,7 @@ final class WeatherSnapshot {
     }
 }
 
-// MARK: - Double? Accessors for Chart KeyPaths
+// MARK:  Double? Accessors for Chart KeyPaths
 
 extension WeatherSnapshot {
     var humidityDouble: Double? { humidity.map(Double.init) }

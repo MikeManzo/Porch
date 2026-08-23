@@ -9,12 +9,16 @@ import SwiftUI
 import AmbientWeather
 import PorchStationKit
 
-/// Wind panel with animated compass rose and wind stats
+/// Wind panel combining the live compass reading with the directional-distribution
+/// rose in a single card, sized in line with Atmospheric/Precipitation rather than
+/// as two stacked full-height panels.
 struct WindPanel: View {
     let porchData: PorchWeatherData?
     let observation: AmbientLastData?
     @EnvironmentObject var manager: WeatherManager
     @Environment(\.dashboardTheme) private var theme
+    @State private var timeRange: ChartTimeRange = .day
+    @State private var snapshots: [WeatherSnapshot] = []
 
     /// Init from PorchWeatherData (new path)
     init(porchData: PorchWeatherData) {
@@ -37,30 +41,53 @@ struct WindPanel: View {
     private var maxGust: Double? { porchData?.maxDailyGustMPH ?? observation?.maxDailyGust }
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
             HStack {
                 Image(systemName: "wind")
                     .foregroundStyle(theme.windColor)
                 Text("Wind")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
+                Picker("", selection: $timeRange) {
+                    ForEach(ChartTimeRange.allCases, id: \.self) { range in
+                        Text(range.rawValue).tag(range)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 130)
             }
 
-            AnimatedCompassRoseView(
-                windDirection: windDir ?? 0,
-                windDirAvg10m: windDirAvg,
-                windSpeed: speed,
-                windGust: gust,
-                isMetric: isMetric
-            )
+            HStack(alignment: .center, spacing: 12) {
+                VStack(spacing: 6) {
+                    AnimatedCompassRoseView(
+                        windDirection: windDir ?? 0,
+                        windDirAvg10m: windDirAvg,
+                        windSpeed: speed,
+                        windGust: gust,
+                        isMetric: isMetric,
+                        scale: 0.55
+                    )
+                    HStack(spacing: 6) {
+                        Text(cardinalDirection(for: windDir ?? 0))
+                            .font(.system(.callout, design: .rounded, weight: .semibold))
+                            .foregroundStyle(theme.primaryText)
+                        Text("\(windDir ?? 0)°")
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundStyle(theme.secondaryText)
+                    }
+                }
+                .frame(maxWidth: .infinity)
 
-            HStack(spacing: 8) {
-                Text(cardinalDirection(for: windDir ?? 0))
-                    .font(.system(.title3, design: .rounded, weight: .semibold))
-                    .foregroundStyle(theme.primaryText)
-                Text("\(windDir ?? 0)°")
-                    .font(.system(.body, design: .rounded))
-                    .foregroundStyle(theme.secondaryText)
+                if snapshots.isEmpty {
+                    Text("Collecting data…")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity, minHeight: 170)
+                } else {
+                    WindRoseView(snapshots: snapshots)
+                        .frame(width: 170, height: 170)
+                        .frame(maxWidth: .infinity)
+                }
             }
 
             HStack(spacing: 0) {
@@ -73,6 +100,25 @@ struct WindPanel: View {
         }
         .padding(20)
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .onAppear { loadData() }
+        .onDisappear { snapshots = [] }
+        .onChange(of: timeRange) { loadData() }
+    }
+
+    // MARK: - Wind Rose Data
+
+    private func loadData() {
+        guard let stationID = manager.selectedStationID,
+              let historyManager = manager.historyManager else { return }
+
+        switch timeRange {
+        case .day:
+            snapshots = historyManager.fetchSnapshots(for: stationID, lastHours: 24)
+        case .threeDays:
+            snapshots = historyManager.fetchSnapshots(for: stationID, lastDays: 3)
+        case .week:
+            snapshots = historyManager.fetchSnapshots(for: stationID, lastDays: 7)
+        }
     }
 
     // MARK: - Helpers

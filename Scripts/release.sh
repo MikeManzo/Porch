@@ -117,6 +117,7 @@ xcodebuild archive \
   -destination "generic/platform=macOS" \
   -configuration Release \
   -archivePath "$ARCHIVE_PATH" \
+  -allowProvisioningUpdates \
   DEVELOPMENT_TEAM="$TEAM_ID" \
   | xcpretty
 
@@ -143,7 +144,8 @@ EOF
 xcodebuild -exportArchive \
   -archivePath "$ARCHIVE_PATH" \
   -exportPath "$EXPORT_PATH" \
-  -exportOptionsPlist "$WORK_DIR/ExportOptions.plist"
+  -exportOptionsPlist "$WORK_DIR/ExportOptions.plist" \
+  -allowProvisioningUpdates
 
 [ -d "$APP_PATH" ] || error "Export failed — .app not found"
 info "Export succeeded ✓"

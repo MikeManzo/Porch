@@ -27,7 +27,7 @@ enum UnitSystem: String, CaseIterable, Identifiable {
 /// Formats sensor values from AmbientLastData for display in the menubar and dashboard
 struct SensorFormatter {
 
-    // MARK: - Sensor Key Classification
+    // MARK:  Sensor Key Classification
 
     /// Keys whose raw imperial value is a temperature in Fahrenheit
     private static let temperatureKeys: Set<String> = [
@@ -85,7 +85,7 @@ struct SensorFormatter {
         return formatter
     }()
 
-    // MARK: - Public API
+    // MARK:  Public API
 
     /// Produces a compact string for the menubar (e.g., "72.1°F" or "22.3°C")
     static func menuBarString(for sensorKey: String, from observation: AmbientLastData,
@@ -134,7 +134,7 @@ struct SensorFormatter {
             ?? PorchWeatherData.sensorDescription(for: sensorKey)
     }
 
-    // MARK: - Unit Conversion
+    // MARK:  Unit Conversion
 
     /// Convert a raw imperial Double value to its metric equivalent based on sensor key
     private static func convertToMetric(_ value: Double, forSensor key: String) -> Double? {
@@ -156,7 +156,7 @@ struct SensorFormatter {
         return nil
     }
 
-    // MARK: - Private Helpers
+    // MARK:  Private Helpers
 
     /// Uses Mirror to extract the value of a named property from AmbientLastData
     private static func mirrorValue(for key: String, from observation: AmbientLastData) -> Any? {
@@ -328,7 +328,7 @@ struct SensorFormatter {
                lowered.contains("pressure") || lowered.contains("inhg")
     }
 
-    // MARK: - PorchWeatherData Support
+    // MARK:  PorchWeatherData Support
 
     /// Produces a compact string for the menubar from PorchWeatherData
     static func menuBarString(for sensorKey: String, from data: PorchWeatherData,
@@ -355,7 +355,7 @@ struct SensorFormatter {
         return rawValue
     }
 
-    // MARK: - Metric Sensor Descriptions
+    // MARK:  Metric Sensor Descriptions
 
     /// Metric-specific sensor descriptions (only entries that differ from imperial)
     private static let metricSensorDescriptions: [String: String] = [

@@ -54,7 +54,7 @@ final class AppUpdater: NSObject, ObservableObject {
     }
 }
 
-// MARK: - SPUUpdaterDelegate (Update Discovery)
+// MARK:  SPUUpdaterDelegate (Update Discovery)
 
 extension AppUpdater: SPUUpdaterDelegate {
     nonisolated func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
@@ -81,7 +81,7 @@ extension AppUpdater: SPUUpdaterDelegate {
     }
 }
 
-// MARK: - SPUStandardUserDriverDelegate (Gentle Reminders)
+// MARK:  SPUStandardUserDriverDelegate (Gentle Reminders)
 
 extension AppUpdater: SPUStandardUserDriverDelegate {
     nonisolated var supportsGentleScheduledUpdateReminders: Bool { true }

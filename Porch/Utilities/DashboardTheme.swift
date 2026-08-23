@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-// MARK: - Theme Identifier
+// MARK:  Theme Identifier
 
 /// User-selectable dashboard themes
 enum DashboardThemeID: String, CaseIterable, Codable, Identifiable {
@@ -40,7 +40,7 @@ enum DashboardThemeID: String, CaseIterable, Codable, Identifiable {
     }
 }
 
-// MARK: - Theme Definition
+// MARK:  Theme Definition
 
 /// Resolved color palette for the weather station dashboard
 struct DashboardTheme {
@@ -76,7 +76,7 @@ struct DashboardTheme {
     let windDirAvgColor: Color
 }
 
-// MARK: - Built-in Themes
+// MARK:  Built-in Themes
 
 extension DashboardTheme {
 
@@ -256,7 +256,7 @@ extension DashboardTheme {
     )
 }
 
-// MARK: - Environment Key
+// MARK:  Environment Key
 
 private struct DashboardThemeKey: EnvironmentKey {
     static let defaultValue: DashboardTheme = .midnight

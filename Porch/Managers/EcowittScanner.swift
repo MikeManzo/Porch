@@ -69,7 +69,7 @@ class EcowittScanner: ObservableObject {
         isScanning = false
     }
 
-    // MARK: - Private
+    // MARK:  Private
 
     /// Probes all 254 hosts on the local subnet concurrently.
     private func performScan(skipHosts: Set<String> = []) async {

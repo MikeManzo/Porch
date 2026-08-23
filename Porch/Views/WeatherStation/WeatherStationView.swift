@@ -10,7 +10,7 @@ import SwiftData
 import AmbientWeather
 import PorchStationKit
 
-// MARK: - Graph Panel Identifier
+// MARK:  Graph Panel Identifier
 
 /// Identifies each reorderable trend-chart graph in the left column
 enum GraphPanel: String, CaseIterable, Codable, Identifiable {
@@ -27,7 +27,7 @@ enum GraphPanel: String, CaseIterable, Codable, Identifiable {
     static let defaultOrder: [GraphPanel] = allCases
 }
 
-// MARK: - Weather Station View
+// MARK:  Weather Station View
 
 /// Full weather station dashboard window with Liquid Glass panels
 struct WeatherStationView: View {
@@ -67,7 +67,7 @@ struct WeatherStationView: View {
         .frame(minWidth: 1100, minHeight: 780)
     }
 
-    // MARK: - Background
+    // MARK:  Background
 
     private var backgroundGradient: some View {
         MeshGradient(
@@ -82,7 +82,7 @@ struct WeatherStationView: View {
         .ignoresSafeArea()
     }
 
-    // MARK: - Dashboard Content
+    // MARK:  Dashboard Content
 
     @ViewBuilder
     private func dashboardContent(data: AmbientWeatherData) -> some View {
@@ -91,8 +91,13 @@ struct WeatherStationView: View {
         ScrollView {
             GlassEffectContainer {
             VStack(spacing: 16) {
-                // Top bar
+                // Top bar sits where the hidden title bar would be. ScrollView
+                // otherwise reserves its own safe-area space to avoid that title
+                // bar on top of whatever padding we add here, which is what was
+                // producing the large empty gap — ignoresSafeArea below removes
+                // that automatic reservation so this padding is the only inset.
                 topBar(data: data)
+                    .padding(.top, 22)
 
                 // Main two-column layout
                 HStack (alignment: .top, spacing: 16) {
@@ -157,7 +162,6 @@ struct WeatherStationView: View {
                         } else {
                             WindPanel(observation: data.observation)
                         }
-                        WindRosePanel()
                         if let porchData {
                             IndoorPanel(porchData: porchData)
                             EnvironmentPanel(porchData: porchData)
@@ -182,9 +186,10 @@ struct WeatherStationView: View {
                 .padding(24)
             }
         }
+        .ignoresSafeArea(edges: .top)
     }
 
-    // MARK: - Graph Order
+    // MARK:  Graph Order
 
     /// Returns only graphs whose sensor data is available, preserving the user's custom order
     private func visibleGraphs(for data: AmbientWeatherData) -> [GraphPanel] {
@@ -225,7 +230,7 @@ struct WeatherStationView: View {
         saveGraphOrder()
     }
 
-    // MARK: - Graph Content
+    // MARK:  Graph Content
 
     @ViewBuilder
     private func graphContent(for graph: GraphPanel, data: AmbientWeatherData) -> some View {
@@ -339,7 +344,7 @@ struct WeatherStationView: View {
         }
     }
 
-    // MARK: - Top Bar
+    // MARK:  Top Bar
 
     private func topBar(data: AmbientWeatherData) -> some View {
         HStack {
@@ -379,7 +384,7 @@ struct WeatherStationView: View {
         .padding(.horizontal, 4)
     }
 
-    // MARK: - Status Indicator
+    // MARK:  Status Indicator
 
     private var sourceIcon: String {
         switch manager.activeDataSource {
@@ -407,7 +412,7 @@ struct WeatherStationView: View {
         }
     }
 
-    // MARK: - Empty State
+    // MARK:  Empty State
 
     private var emptyState: some View {
         VStack(spacing: 12) {
@@ -422,7 +427,7 @@ struct WeatherStationView: View {
     }
 }
 
-// MARK: - Hover Tracker (AppKit-backed)
+// MARK:  Hover Tracker (AppKit-backed)
 
 /// Reliable mouse hover detection using NSTrackingArea, bypassing SwiftUI's
 /// onHover limitations with complex child views and glass effects.
@@ -463,7 +468,7 @@ struct HoverTracker: NSViewRepresentable {
     }
 }
 
-// MARK: - Graph Reorder Bar
+// MARK:  Graph Reorder Bar
 
 /// Reorder controls shown on hover — up/down buttons for moving graph panels.
 struct GraphReorderBar: View {

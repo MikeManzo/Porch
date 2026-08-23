@@ -87,7 +87,7 @@ struct GardenPanel: View {
         }
     }
 
-    // MARK: - Tiles
+    // MARK:  Tiles
 
     private func gardenTilePorch(key: String, data: PorchWeatherData) -> some View {
         HStack(spacing: 8) {
@@ -139,7 +139,7 @@ struct GardenPanel: View {
         .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
     }
 
-    // MARK: - Icons & Colors
+    // MARK:  Icons & Colors
 
     private func tintIcon(for key: String) -> String {
         let lowered = key.lowercased()

@@ -111,7 +111,7 @@ struct SensorsSettingsTab: View {
         }
     }
 
-    // MARK: - Category Colors
+    // MARK:  Category Colors
 
     private func categoryColor(for category: AmbientWeather.SensorCategory) -> Color {
         switch category {
@@ -130,7 +130,7 @@ struct SensorsSettingsTab: View {
         }
     }
 
-    // MARK: - Battery Status
+    // MARK:  Battery Status
 
     /// Battery keys where the convention is inverted: 0 = OK, 1 = low
     private static let invertedBatteryKeys: Set<String> = ["battLightning"]

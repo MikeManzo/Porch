@@ -212,7 +212,7 @@ struct DisplaySettingsTab: View {
     }
 }
 
-// MARK: - String Helper
+// MARK:  String Helper
 
 extension String {
     /// Converts "camelCase" to "Camel Case"

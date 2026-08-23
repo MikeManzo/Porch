@@ -100,7 +100,7 @@ class HistoryManager {
         try? modelContext.save()
     }
 
-    // MARK: - Query Methods
+    // MARK:  Query Methods
 
     /// Fetch snapshots for a station within a date range, ordered by timestamp
     func fetchSnapshots(
@@ -132,7 +132,7 @@ class HistoryManager {
         return fetchSnapshots(for: stationID, from: startDate)
     }
 
-    // MARK: - Pruning
+    // MARK:  Pruning
 
     /// Remove snapshots older than the retention period
     private func pruneOldData() {

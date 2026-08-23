@@ -74,7 +74,7 @@ struct IndoorPanel: View {
         }
     }
 
-    // MARK: - Helpers
+    // MARK:  Helpers
 
     private func statView(icon: String, label: String, value: String, tint: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {

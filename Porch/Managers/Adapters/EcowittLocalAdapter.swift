@@ -14,7 +14,7 @@ import PorchStationKit
 @MainActor
 final class EcowittLocalAdapter: StationAdapter, @unchecked Sendable {
 
-    // MARK: - StationAdapter Identity
+    // MARK:  StationAdapter Identity
 
     static let brand: StationBrand = .ecowitt
     static let connectionType: ConnectionType = .local
@@ -44,7 +44,7 @@ final class EcowittLocalAdapter: StationAdapter, @unchecked Sendable {
         ConfigurationField(id: "longitude", label: "Longitude", placeholder: "-74.0060", isRequired: false)
     ]
 
-    // MARK: - State
+    // MARK:  State
 
     private let client = EcowittClient()
     private var observationContinuation: AsyncStream<PorchWeatherData>.Continuation?
@@ -54,7 +54,7 @@ final class EcowittLocalAdapter: StationAdapter, @unchecked Sendable {
 
     private(set) var isConnected = false
 
-    // MARK: - Streams
+    // MARK:  Streams
 
     lazy var observations: AsyncStream<PorchWeatherData> = {
         AsyncStream { [weak self] continuation in
@@ -68,7 +68,7 @@ final class EcowittLocalAdapter: StationAdapter, @unchecked Sendable {
         }
     }()
 
-    // MARK: - Discovery
+    // MARK:  Discovery
 
     nonisolated func discover() async -> [DiscoveredStation] {
         guard let subnet = Self.localSubnet() else { return [] }
@@ -97,7 +97,7 @@ final class EcowittLocalAdapter: StationAdapter, @unchecked Sendable {
         return found
     }
 
-    // MARK: - Connection
+    // MARK:  Connection
 
     func connect(configuration: StationConfiguration) async throws {
         guard let host = configuration.host, !host.isEmpty else {
@@ -149,7 +149,7 @@ final class EcowittLocalAdapter: StationAdapter, @unchecked Sendable {
         statusContinuation?.yield(.disconnected)
     }
 
-    // MARK: - Data Conversion
+    // MARK:  Data Conversion
 
     private func convert(_ ecowitt: EcowittLiveData) -> PorchWeatherData {
         let config = configuration ?? StationConfiguration()
@@ -256,7 +256,7 @@ final class EcowittLocalAdapter: StationAdapter, @unchecked Sendable {
         return data
     }
 
-    // MARK: - Network Helpers
+    // MARK:  Network Helpers
 
     private nonisolated static func probeForDiscovery(ip: String, port: Int = 80) async -> DiscoveredStation? {
         guard let url = URL(string: "http://\(ip):\(port)/get_livedata_info") else { return nil }

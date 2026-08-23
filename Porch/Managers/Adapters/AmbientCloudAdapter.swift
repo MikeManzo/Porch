@@ -14,7 +14,7 @@ import PorchStationKit
 @MainActor
 final class AmbientCloudAdapter: StationAdapter, @unchecked Sendable {
 
-    // MARK: - StationAdapter Identity
+    // MARK:  StationAdapter Identity
 
     static let brand: StationBrand = .ambient
     static let connectionType: ConnectionType = .cloud
@@ -41,7 +41,7 @@ final class AmbientCloudAdapter: StationAdapter, @unchecked Sendable {
         ConfigurationField(id: "apiKey", label: "API Key(s)", placeholder: "Comma-separated API keys", isSecure: true)
     ]
 
-    // MARK: - State
+    // MARK:  State
 
     private var socket: AmbientWebSocket?
     private var observationContinuation: AsyncStream<PorchWeatherData>.Continuation?
@@ -50,7 +50,7 @@ final class AmbientCloudAdapter: StationAdapter, @unchecked Sendable {
 
     private(set) var isConnected = false
 
-    // MARK: - Streams
+    // MARK:  Streams
 
     lazy var observations: AsyncStream<PorchWeatherData> = {
         AsyncStream { [weak self] continuation in
@@ -64,7 +64,7 @@ final class AmbientCloudAdapter: StationAdapter, @unchecked Sendable {
         }
     }()
 
-    // MARK: - Connection
+    // MARK:  Connection
 
     func connect(configuration: StationConfiguration) async throws {
         guard let appKey = configuration.applicationKey, !appKey.isEmpty else {
@@ -127,7 +127,7 @@ final class AmbientCloudAdapter: StationAdapter, @unchecked Sendable {
         statusContinuation?.yield(.disconnected)
     }
 
-    // MARK: - Data Conversion
+    // MARK:  Data Conversion
 
     private func convert(_ ambient: AmbientWeatherData) -> PorchWeatherData {
         let obs = ambient.observation

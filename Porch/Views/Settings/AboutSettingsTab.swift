@@ -21,7 +21,7 @@ struct AboutSettingsTab: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                // MARK: - Hero Section
+                // MARK:  Hero Section
                 VStack(spacing: 16) {
                     Image(nsImage: NSApp.applicationIconImage)
                         .resizable()
@@ -50,7 +50,7 @@ struct AboutSettingsTab: View {
                 Divider()
                     .padding(.horizontal, 32)
 
-                // MARK: - Highlights
+                // MARK:  Highlights
                 VStack(spacing: 12) {
                     highlightRow(
                         icon: "bolt.horizontal.fill",
@@ -83,7 +83,7 @@ struct AboutSettingsTab: View {
                 Divider()
                     .padding(.horizontal, 32)
 
-                // MARK: - Built With
+                // MARK:  Built With
                 VStack(spacing: 10) {
                     Text("Built With")
                         .font(.caption.weight(.semibold))
@@ -103,7 +103,7 @@ struct AboutSettingsTab: View {
                 Divider()
                     .padding(.horizontal, 32)
 
-                // MARK: - Acknowledgments
+                // MARK:  Acknowledgments
                 VStack(spacing: 12) {
                     Text("Acknowledgments")
                         .font(.caption.weight(.semibold))
@@ -132,7 +132,7 @@ struct AboutSettingsTab: View {
                 Divider()
                     .padding(.horizontal, 32)
 
-                // MARK: - Links
+                // MARK:  Links
                 VStack(spacing: 10) {
                     Link(destination: URL(string: "https://github.com/MikeManzo/Porch")!) {
                         linkRow(icon: "chevron.left.forwardslash.chevron.right", title: "Source Code on GitHub")
@@ -149,7 +149,7 @@ struct AboutSettingsTab: View {
                 .padding(.vertical, 16)
                 .padding(.horizontal, 24)
 
-                // MARK: - Copyright
+                // MARK:  Copyright
                 VStack(spacing: 4) {
                     Text("\u{00A9} \(Calendar.current.component(.year, from: Date())) Mike Manzo")
                         .font(.caption)
@@ -164,7 +164,7 @@ struct AboutSettingsTab: View {
         }
     }
 
-    // MARK: - Components
+    // MARK:  Components
 
     private func highlightRow(icon: String, color: Color, title: String, detail: String) -> some View {
         HStack(spacing: 14) {

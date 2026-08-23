@@ -44,7 +44,7 @@ struct ConditionsGridView: View {
         }
     }
 
-    // MARK: - Tile View
+    // MARK:  Tile View
 
     private func conditionTile(_ item: ConditionItem) -> some View {
         HStack(spacing: 8) {
@@ -70,7 +70,7 @@ struct ConditionsGridView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 
-    // MARK: - Build Items from Available Sensors
+    // MARK:  Build Items from Available Sensors
 
     private func buildConditionItems() -> [ConditionItem] {
         if let porchData {
@@ -215,7 +215,7 @@ struct ConditionsGridView: View {
         return items
     }
 
-    // MARK: - Lightning Labels
+    // MARK:  Lightning Labels
 
     private func lightningLabelPorch(_ data: PorchWeatherData) -> String {
         guard let ts = data.lightningTime else { return "Lightning Today" }
@@ -234,7 +234,7 @@ struct ConditionsGridView: View {
         return "Lightning · \(hours)h ago"
     }
 
-    // MARK: - UV Helpers
+    // MARK:  UV Helpers
 
     private func uvDescription(_ uv: Int) -> String {
         switch uv {
@@ -256,7 +256,7 @@ struct ConditionsGridView: View {
         }
     }
 
-    // MARK: - Air Quality Helpers
+    // MARK:  Air Quality Helpers
 
     private func pm25Color(_ pm: Double) -> Color {
         switch pm {
@@ -279,7 +279,7 @@ struct ConditionsGridView: View {
     }
 }
 
-// MARK: - Model
+// MARK:  Model
 
 private struct ConditionItem: Identifiable {
     let id = UUID()

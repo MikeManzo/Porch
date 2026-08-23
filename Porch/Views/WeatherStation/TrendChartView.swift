@@ -223,7 +223,7 @@ struct TrendChartView: View {
         .onChange(of: timeRange) { loadData() }
     }
 
-    // MARK: - Selection
+    // MARK:  Selection
 
     /// The nearest primary data point to the scrub position
     private var selectedPoint: (timestamp: Date, value: Double)? {
@@ -233,7 +233,7 @@ struct TrendChartView: View {
         })
     }
 
-    // MARK: - Y-Axis Domain
+    // MARK:  Y-Axis Domain
 
     /// Fixed Y domain from data so selection marks don't shift the scale
     private var yDomain: ClosedRange<Double> {
@@ -252,7 +252,7 @@ struct TrendChartView: View {
         }
     }
 
-    // MARK: - X-Axis Format
+    // MARK:  X-Axis Format
 
     private var xAxisFormat: Date.FormatStyle {
         switch timeRange {
@@ -263,7 +263,7 @@ struct TrendChartView: View {
         }
     }
 
-    // MARK: - Data Loading
+    // MARK:  Data Loading
 
     private func loadData() {
         guard let stationID = manager.selectedStationID,
@@ -278,7 +278,7 @@ struct TrendChartView: View {
         }
     }
 
-    // MARK: - Data Processing
+    // MARK:  Data Processing
 
     private var primaryData: [(timestamp: Date, value: Double)] {
         processData(path: valuePath, converter: convertToMetric)

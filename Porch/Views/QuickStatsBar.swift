@@ -48,7 +48,7 @@ struct QuickStatsBar: View {
         .padding(.horizontal, 12)
     }
 
-    // MARK: - Dynamic Stat View
+    // MARK:  Dynamic Stat View
 
     @ViewBuilder
     private func statView(for key: String) -> some View {
@@ -91,7 +91,7 @@ struct QuickStatsBar: View {
         }
     }
 
-    // MARK: - Value Accessors
+    // MARK:  Value Accessors
 
     private var humidityValue: String {
         if let porchData, let h = porchData.humidity { return "\(h)%" }
@@ -105,7 +105,7 @@ struct QuickStatsBar: View {
         return "--"
     }
 
-    // MARK: - Wind Stat with Compass
+    // MARK:  Wind Stat with Compass
 
     private var windStat: some View {
         VStack(spacing: 6) {
@@ -131,7 +131,7 @@ struct QuickStatsBar: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Pressure Stat with Trend Arrow
+    // MARK:  Pressure Stat with Trend Arrow
 
     private var pressureStat: some View {
         VStack(spacing: 6) {
@@ -139,15 +139,16 @@ struct QuickStatsBar: View {
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .frame(height: 28)
-            HStack(spacing: 2) {
+            // A single concatenated Text (number + trend glyph) scales as one unit,
+            // so it shrinks to fit instead of truncating like a two-view HStack would.
+            (
                 Text(formatPressure())
-                    .font(.system(.title2, design: .rounded, weight: .semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Image(systemName: manager.pressureTrend.icon)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(pressureTrendColor)
-            }
+                + Text(" ")
+                + Text(Image(systemName: manager.pressureTrend.icon)).foregroundColor(pressureTrendColor)
+            )
+            .font(.system(.title2, design: .rounded, weight: .semibold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.55)
             Text("Pressure")
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
@@ -163,7 +164,7 @@ struct QuickStatsBar: View {
         }
     }
 
-    // MARK: - Generic Stat
+    // MARK:  Generic Stat
 
     private func quickStat(icon: String, value: String, label: String) -> some View {
         VStack(spacing: 6) {
@@ -188,7 +189,7 @@ struct QuickStatsBar: View {
             .frame(width: 1, height: 48)
     }
 
-    // MARK: - Formatting
+    // MARK:  Formatting
 
     private func formatWind() -> String {
         let speed = porchData?.windSpeedMPH ?? observation?.windSpeedMPH

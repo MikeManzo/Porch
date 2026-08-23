@@ -14,49 +14,20 @@ struct DailyExtremesView: View {
     private var isMetric: Bool { manager.unitSystem == .metric }
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 7) {
             if let high = manager.dailyHighTemp {
-                extremeStat(
-                    icon: "thermometer.sun.fill",
-                    label: "Hi",
-                    value: formatTemp(high),
-                    tint: .red
-                )
+                StatChip(icon: "thermometer.sun.fill", value: formatTemp(high), label: "Hi", tint: .red)
             }
 
             if let low = manager.dailyLowTemp {
-                extremeStat(
-                    icon: "thermometer.snowflake",
-                    label: "Lo",
-                    value: formatTemp(low),
-                    tint: .blue
-                )
+                StatChip(icon: "thermometer.snowflake", value: formatTemp(low), label: "Lo", tint: .blue)
             }
 
             if let wind = manager.dailyHighWind {
-                extremeStat(
-                    icon: "wind",
-                    label: "Gust",
-                    value: formatWind(wind),
-                    tint: .teal
-                )
+                StatChip(icon: "wind", value: formatWind(wind), label: "Gust", tint: .teal)
             }
         }
-        .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
-    }
-
-    private func extremeStat(icon: String, label: String, value: String, tint: Color) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption2)
-                .foregroundStyle(tint)
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.system(.caption, design: .rounded, weight: .semibold))
-        }
     }
 
     private func formatTemp(_ temp: Double) -> String {

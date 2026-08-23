@@ -12,7 +12,7 @@ import PorchStationKit
 @MainActor
 final class TempestCloudAdapter: StationAdapter, @unchecked Sendable {
 
-    // MARK: - StationAdapter Identity
+    // MARK:  StationAdapter Identity
 
     static let brand: StationBrand = .tempest
     static let connectionType: ConnectionType = .cloud
@@ -39,14 +39,14 @@ final class TempestCloudAdapter: StationAdapter, @unchecked Sendable {
         ConfigurationField(id: "deviceID", label: "Station ID", placeholder: "Your Tempest station ID", isRequired: false)
     ]
 
-    // MARK: - State
+    // MARK:  State
 
     private var observationContinuation: AsyncStream<PorchWeatherData>.Continuation?
     private var statusContinuation: AsyncStream<StationConnectionStatus>.Continuation?
 
     private(set) var isConnected = false
 
-    // MARK: - Streams
+    // MARK:  Streams
 
     lazy var observations: AsyncStream<PorchWeatherData> = {
         AsyncStream { [weak self] continuation in
@@ -60,7 +60,7 @@ final class TempestCloudAdapter: StationAdapter, @unchecked Sendable {
         }
     }()
 
-    // MARK: - Connection
+    // MARK:  Connection
 
     func connect(configuration: StationConfiguration) async throws {
         statusContinuation?.yield(.failed("WeatherFlow Tempest support coming soon"))

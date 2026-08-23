@@ -30,7 +30,9 @@ struct StationHeaderView: View {
 
             Image(systemName: statusIcon)
                 .foregroundStyle(statusColor)
-                .font(.system(size: 10))
+                .font(.system(size: 11, weight: .semibold))
+                .frame(width: 26, height: 26)
+                .background(.quaternary, in: Circle())
                 .help(statusHelpText)
         }
         .padding(12)

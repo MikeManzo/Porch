@@ -116,7 +116,7 @@ struct SettingsView: View {
         .frame(width: 580, height: 600)
     }
 
-    // MARK: - Detail Content
+    // MARK:  Detail Content
 
     @ViewBuilder
     private var detailView: some View {
